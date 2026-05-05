@@ -1,6 +1,6 @@
 {
-    "name": "sahaduta",
-    "short_name": "sahaduta",
+    "name": "sahaduta_mobile",
+    "short_name": "sahaduta_mobile",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
