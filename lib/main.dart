@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
 import 'screens/main_navigation.dart';
+import 'package:flutter/services.dart';
+import 'screens/login_screen.dart';
 
 void main() {
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+    ),
+  );
+  runApp(const SahadutaApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class SahadutaApp extends StatelessWidget {
+  const SahadutaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +32,8 @@ class MyApp extends StatelessWidget {
           centerTitle: true,
           elevation: 0,
         ),
+        fontFamily: 'Roboto',
+        useMaterial3: true,
       ),
       home: const MainNavigation(),
     );
