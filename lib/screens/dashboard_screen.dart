@@ -67,12 +67,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       children: [
         Text(
-          DateFormat('HH:mm:ss').format(_currentTime),
+          DateFormat('HH:mm:ss', 'id').format(_currentTime),
           style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Text(
-          DateFormat('EEEE, dd MMMM yyyy').format(_currentTime),
+          DateFormat('EEEE, dd MMMM yyyy', 'id').format(_currentTime),
           style: const TextStyle(fontSize: 18, color: Colors.grey),
         ),
       ],
@@ -93,7 +93,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _buildStatusColumn(
               'Masuk',
               record?.clockInTime != null 
-                  ? DateFormat('HH:mm').format(record!.clockInTime!)
+                  ? DateFormat('HH:mm', 'id').format(record!.clockInTime!)
                   : '--:--',
               Icons.login,
               Colors.green,
@@ -102,7 +102,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _buildStatusColumn(
               'Pulang',
               record?.clockOutTime != null 
-                  ? DateFormat('HH:mm').format(record!.clockOutTime!)
+                  ? DateFormat('HH:mm', 'id').format(record!.clockOutTime!)
                   : '--:--',
               Icons.logout,
               Colors.orange,
@@ -128,6 +128,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildActionButtons() {
     final hasClockedIn = _dataService.hasClockedIn;
     final hasClockedOut = _dataService.hasClockedOut;
+    final canClockOut = _dataService.canClockOut;
+    final allowedHour = _dataService.clockOutAllowedHour.toString().padLeft(2, '0');
+    final allowedMinute = _dataService.clockOutAllowedMinute.toString().padLeft(2, '0');
 
     if (!hasClockedIn) {
       return ElevatedButton(
@@ -148,6 +151,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: const Text('CLOCK IN', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
       );
     } else if (!hasClockedOut) {
+      // Tampilkan tombol Clock Out hanya jika jam sudah lewat batas
+      if (!canClockOut) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.orange.shade50,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.orange.shade200),
+          ),
+          child: Column(
+            children: [
+              const Icon(Icons.access_time, color: Colors.orange, size: 32),
+              const SizedBox(height: 8),
+              Text(
+                'Absen pulang tersedia mulai pukul $allowedHour:$allowedMinute',
+                style: const TextStyle(fontSize: 15, color: Colors.orange, fontWeight: FontWeight.w600),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        );
+      }
       return ElevatedButton(
         onPressed: () {
           Navigator.push(

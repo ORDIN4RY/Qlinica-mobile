@@ -11,6 +11,9 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
+  // Simpan sebagai field agar tidak re-create setiap build
+  final DataService _dataService = DataService();
+
   int _selectedMonth = DateTime.now().month;
   int _selectedYear = DateTime.now().year;
 
@@ -27,8 +30,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dataService = DataService();
-    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Riwayat Kehadiran'),
@@ -38,9 +39,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
           _buildFilterSection(),
           Expanded(
             child: AnimatedBuilder(
-              animation: dataService,
+              animation: _dataService,
               builder: (context, child) {
-                final history = dataService.attendanceHistory.where((record) {
+                final history = _dataService.attendanceHistory.where((record) {
                   return record.date.month == _selectedMonth && record.date.year == _selectedYear;
                 }).toList();
                 
@@ -106,7 +107,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        DateFormat('EEEE, dd MMMM yyyy').format(record.date),
+                                        DateFormat('EEEE, dd MMMM yyyy', 'id').format(record.date),
                                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                       ),
                                       const SizedBox(height: 12),
@@ -115,13 +116,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                           const Icon(Icons.login, size: 16, color: Colors.blue),
                                           const SizedBox(width: 4),
                                           Text(record.clockInTime != null 
-                                              ? DateFormat('HH:mm').format(record.clockInTime!) 
+                                              ? DateFormat('HH:mm', 'id').format(record.clockInTime!) 
                                               : '--:--'),
                                           const SizedBox(width: 16),
                                           const Icon(Icons.logout, size: 16, color: Colors.orange),
                                           const SizedBox(width: 4),
                                           Text(record.clockOutTime != null 
-                                              ? DateFormat('HH:mm').format(record.clockOutTime!) 
+                                              ? DateFormat('HH:mm', 'id').format(record.clockOutTime!) 
                                               : '--:--'),
                                         ],
                                       ),
@@ -244,7 +245,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          DateFormat('EEEE, dd MMMM yyyy').format(record.date),
+                          DateFormat('EEEE, dd MMMM yyyy', 'id').format(record.date),
                           style: TextStyle(color: Colors.grey.shade600),
                         ),
                       ],
@@ -257,14 +258,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 icon: Icons.login,
                 color: Colors.blue,
                 label: 'Waktu Masuk',
-                value: record.clockInTime != null ? DateFormat('HH:mm').format(record.clockInTime!) : '--:--',
+                value: record.clockInTime != null ? DateFormat('HH:mm', 'id').format(record.clockInTime!) : '--:--',
               ),
               const SizedBox(height: 16),
               _buildDetailRow(
                 icon: Icons.logout,
                 color: Colors.orange,
                 label: 'Waktu Keluar',
-                value: record.clockOutTime != null ? DateFormat('HH:mm').format(record.clockOutTime!) : '--:--',
+                value: record.clockOutTime != null ? DateFormat('HH:mm', 'id').format(record.clockOutTime!) : '--:--',
               ),
               const SizedBox(height: 16),
               _buildDetailRow(

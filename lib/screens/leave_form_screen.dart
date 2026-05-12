@@ -119,7 +119,7 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
                         ),
                         child: Text(
                           _startDate != null
-                              ? DateFormat('dd MMM yyyy').format(_startDate!)
+                              ? DateFormat('dd MMM yyyy', 'id').format(_startDate!)
                               : 'Pilih Tanggal',
                         ),
                       ),
@@ -136,7 +136,7 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
                         ),
                         child: Text(
                           _endDate != null
-                              ? DateFormat('dd MMM yyyy').format(_endDate!)
+                              ? DateFormat('dd MMM yyyy', 'id').format(_endDate!)
                               : 'Pilih Tanggal',
                         ),
                       ),

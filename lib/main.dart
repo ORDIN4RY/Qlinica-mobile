@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
-import 'screens/main_navigation.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'screens/main_navigation.dart';
+// ignore: unused_import
 import 'screens/login_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inisialisasi locale 'id' agar DateFormat bisa format nama hari/bulan bahasa Indonesia
+  await initializeDateFormatting('id', null);
+
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -33,7 +39,7 @@ class SahadutaApp extends StatelessWidget {
           elevation: 0,
         ),
         fontFamily: 'Roboto',
-        useMaterial3: true,
+        // useMaterial3: true,
       ),
       home: const MainNavigation(),
     );

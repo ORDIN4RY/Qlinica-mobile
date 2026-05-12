@@ -136,7 +136,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
-                                          '${DateFormat('dd MMM yyyy').format(req.startDate)} - ${DateFormat('dd MMM yyyy').format(req.endDate)}',
+                                          '${DateFormat('dd MMM yyyy', 'id').format(req.startDate)} - ${DateFormat('dd MMM yyyy', 'id').format(req.endDate)}',
                                           style: const TextStyle(fontSize: 13),
                                         ),
                                       ),
@@ -155,7 +155,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      'Diajukan: ${DateFormat('dd MMM yyyy HH:mm').format(req.createdAt)}',
+                                      'Diajukan: ${DateFormat('dd MMM yyyy HH:mm', 'id').format(req.createdAt)}',
                                       style: const TextStyle(fontSize: 12, color: Colors.grey),
                                     ),
                                     const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
@@ -336,7 +336,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          'Diajukan pada ${DateFormat('dd MMM yyyy HH:mm').format(req.createdAt)}',
+                          'Diajukan pada ${DateFormat('dd MMM yyyy HH:mm', 'id').format(req.createdAt)}',
                           style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                         ),
                       ],
@@ -349,9 +349,9 @@ class _LeaveScreenState extends State<LeaveScreen> {
               const Divider(height: 24),
               _buildDetailRow(label: 'Status', value: req.status.label, isStatus: true, status: req.status),
               const Divider(height: 24),
-              _buildDetailRow(label: 'Mulai', value: DateFormat('dd MMMM yyyy').format(req.startDate)),
+              _buildDetailRow(label: 'Mulai', value: DateFormat('dd MMMM yyyy', 'id').format(req.startDate)),
               const Divider(height: 24),
-              _buildDetailRow(label: 'Sampai', value: DateFormat('dd MMMM yyyy').format(req.endDate)),
+              _buildDetailRow(label: 'Sampai', value: DateFormat('dd MMMM yyyy', 'id').format(req.endDate)),
               const Divider(height: 24),
               const Text('Alasan:', style: TextStyle(color: Colors.grey)),
               const SizedBox(height: 8),
