@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../services/api_service.dart';
+import 'main_navigation.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -47,19 +49,31 @@ class _LoginScreenState extends State<LoginScreen>
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
 
-    // TODO: ganti dengan API call ke backend
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      await ApiService.instance.login(
+        _noRekamMedikController.text.trim(), // email pegawai
+        _passwordController.text,
+      );
 
-    if (!mounted) return;
-    setState(() => _isLoading = false);
+      if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Login berhasil!'),
-        backgroundColor: Color(0xFF1A3A6B),
-      ),
-    );
-    // TODO: Navigator.pushReplacementNamed(context, '/dashboard');
+      // Navigasi ke halaman utama, hapus semua route sebelumnya
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const MainNavigation()),
+        (route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: const Color(0xFFE53935),
+        ),
+      );
+    }
   }
 
   @override
@@ -137,7 +151,7 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Silahkan masuk dengan No. Rekam Medik Anda.',
+                            'Silahkan masuk dengan akun pegawai Anda.',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.82),
                               fontSize: 14,
@@ -187,9 +201,9 @@ class _LoginScreenState extends State<LoginScreen>
                                     ),
                                     const SizedBox(height: 24),
 
-                                    // No. Rekam Medik
+                                    // Email
                                     const Text(
-                                      'No. Rekam Medik',
+                                      'Email',
                                       style: TextStyle(
                                         fontSize: 13.5,
                                         fontWeight: FontWeight.w600,
@@ -200,17 +214,17 @@ class _LoginScreenState extends State<LoginScreen>
                                     TextFormField(
                                       controller: _noRekamMedikController,
                                       textInputAction: TextInputAction.next,
-                                      keyboardType: TextInputType.text,
+                                      keyboardType: TextInputType.emailAddress,
                                       style: const TextStyle(
                                         fontSize: 14,
                                         color: Color(0xFF222222),
                                       ),
                                       decoration:
-                                          _inputDecoration('RM-YYYYMMDD-XXXX'),
+                                          _inputDecoration('nama@klinisahaduta.com'),
                                       validator: (value) {
                                         if (value == null ||
                                             value.trim().isEmpty) {
-                                          return 'No. Rekam Medik tidak boleh kosong';
+                                          return 'Email tidak boleh kosong';
                                         }
                                         return null;
                                       },
@@ -310,7 +324,7 @@ class _LoginScreenState extends State<LoginScreen>
                                           const SizedBox(width: 8),
                                           Expanded(
                                             child: Text(
-                                              'Belum punya No. Rekam Medik? Silahkan datang langsung ke Klinik Sahaduta.',
+                                              'Gunakan email dan password yang diberikan oleh admin klinik.',
                                               style: const TextStyle(
                                                 fontSize: 12.5,
                                                 color: Color(0xFF444466),

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'screens/main_navigation.dart';
-// ignore: unused_import
 import 'screens/login_screen.dart';
+import 'services/api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,9 +39,41 @@ class SahadutaApp extends StatelessWidget {
           elevation: 0,
         ),
         fontFamily: 'Roboto',
-        // useMaterial3: true,
       ),
-      home: const MainNavigation(),
+      home: const AuthWrapper(),
+    );
+  }
+}
+
+/// Cek token → jika sudah login langsung ke MainNavigation,
+/// jika belum → LoginScreen.
+class AuthWrapper extends StatefulWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: ApiService.instance.isLoggedIn,
+      builder: (context, snapshot) {
+        // Tampilkan splash singkat saat cek token
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            backgroundColor: Color(0xFF1A3A6B),
+            body: Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
+          );
+        }
+        if (snapshot.data == true) {
+          return const MainNavigation();
+        }
+        return const LoginScreen();
+      },
     );
   }
 }
