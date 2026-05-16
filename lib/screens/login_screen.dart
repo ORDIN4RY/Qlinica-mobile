@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:local_auth/local_auth.dart';
 import '../services/api_service.dart';
 import 'main_navigation.dart';
 
@@ -22,6 +23,9 @@ class _LoginScreenState extends State<LoginScreen>
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
 
+  final LocalAuthentication _auth = LocalAuthentication();
+  bool _canCheckBiometrics = false;
+
   @override
   void initState() {
     super.initState();
@@ -35,6 +39,67 @@ class _LoginScreenState extends State<LoginScreen>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut));
     _animCtrl.forward();
+
+    _checkBiometrics();
+  }
+
+  Future<void> _checkBiometrics() async {
+    bool canCheckBiometrics = false;
+    try {
+      canCheckBiometrics = await _auth.canCheckBiometrics || await _auth.isDeviceSupported();
+    } on PlatformException catch (e) {
+      canCheckBiometrics = false;
+    }
+
+    final isBiometricEnabled = await ApiService.instance.isBiometricEnabled();
+    final hasToken = await ApiService.instance.isLoggedIn;
+
+    if (!mounted) return;
+
+    setState(() {
+      _canCheckBiometrics = canCheckBiometrics && isBiometricEnabled && hasToken;
+    });
+
+    // Jika biometrik tersedia dan aktif, otomatis munculkan prompt
+    if (_canCheckBiometrics) {
+      // Delay sedikit agar animasi login screen selesai dulu
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (mounted) _authenticateWithBiometrics();
+      });
+    }
+  }
+
+  Future<void> _authenticateWithBiometrics() async {
+    bool authenticated = false;
+    try {
+      setState(() => _isLoading = true);
+      authenticated = await _auth.authenticate(
+        localizedReason: 'Pindai sidik jari Anda untuk login',
+        options: const AuthenticationOptions(
+          stickyAuth: true,
+          biometricOnly: false,
+        ),
+      );
+    } on PlatformException catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Autentikasi biometrik dibatalkan/gagal.')),
+      );
+      return;
+    }
+    
+    if (!mounted) return;
+
+    if (authenticated) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const MainNavigation()),
+        (route) => false,
+      );
+    } else {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -50,10 +115,23 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() => _isLoading = true);
 
     try {
-      await ApiService.instance.login(
+      final user = await ApiService.instance.login(
         _noRekamMedikController.text.trim(), // email pegawai
         _passwordController.text,
       );
+
+      await ApiService.instance.saveUser(user);
+
+      if (_rememberMe) {
+        try {
+          final canCheck = await _auth.canCheckBiometrics || await _auth.isDeviceSupported();
+          if (canCheck) {
+            await ApiService.instance.setBiometricEnabled(true);
+          }
+        } catch (_) {}
+      } else {
+        await ApiService.instance.setBiometricEnabled(false);
+      }
 
       if (!mounted) return;
 
@@ -101,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen>
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [Color(0xFF1A3A6B), Color(0xFF1A3A6B)],
+                          colors: [Color(0xFF1E3A8A), Color(0xFF1E3A8A)],
                         ),
                         borderRadius: BorderRadius.only(
                           bottomLeft: Radius.circular(32),
@@ -124,7 +202,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 child: const Center(
                                   child: Icon(
                                     Icons.local_hospital_rounded,
-                                    color: Color(0xFF1A3A6B),
+                                    color: Color(0xFF1E3A8A),
                                     size: 24,
                                   ),
                                 ),
@@ -283,7 +361,7 @@ class _LoginScreenState extends State<LoginScreen>
                                           child: Checkbox(
                                             value: _rememberMe,
                                             activeColor:
-                                                const Color(0xFF1A3A6B),
+                                                const Color(0xFF1E3A8A),
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(4),
@@ -346,13 +424,13 @@ class _LoginScreenState extends State<LoginScreen>
                                             _isLoading ? null : _onLogin,
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor:
-                                              const Color(0xFF1A3A6B),
+                                              const Color(0xFF1E3A8A),
                                           foregroundColor: Colors.white,
                                           disabledBackgroundColor:
-                                              const Color(0xFF1A3A6B)
+                                              const Color(0xFF1E3A8A)
                                                   .withOpacity(0.6),
                                           elevation: 2,
-                                          shadowColor: const Color(0xFF1A3A6B)
+                                          shadowColor: const Color(0xFF1E3A8A)
                                               .withOpacity(0.35),
                                           shape: RoundedRectangleBorder(
                                             borderRadius:
@@ -379,6 +457,31 @@ class _LoginScreenState extends State<LoginScreen>
                                               ),
                                       ),
                                     ),
+                                    if (_canCheckBiometrics) ...[
+                                      const SizedBox(height: 16),
+                                      SizedBox(
+                                        width: double.infinity,
+                                        height: 52,
+                                        child: OutlinedButton.icon(
+                                          onPressed: _isLoading ? null : _authenticateWithBiometrics,
+                                          icon: const Icon(Icons.fingerprint, size: 24),
+                                          label: const Text(
+                                            'Login dengan Biometrik',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor: const Color(0xFF1E3A8A),
+                                            side: const BorderSide(color: Color(0xFF1E3A8A), width: 1.5),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(14),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -414,7 +517,7 @@ class _LoginScreenState extends State<LoginScreen>
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF1A3A6B), width: 1.6),
+        borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 1.6),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

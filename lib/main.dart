@@ -30,7 +30,7 @@ class SahadutaApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.teal,
+          seedColor: const Color(0xFF1E3A8A),
           brightness: Brightness.light,
         ),
         useMaterial3: true,
@@ -55,23 +55,37 @@ class AuthWrapper extends StatefulWidget {
 }
 
 class _AuthWrapperState extends State<AuthWrapper> {
+  Future<Map<String, dynamic>> _checkAuth() async {
+    final isLoggedIn = await ApiService.instance.isLoggedIn;
+    final biometricEnabled = await ApiService.instance.isBiometricEnabled();
+    return {
+      'isLoggedIn': isLoggedIn,
+      'biometricEnabled': biometricEnabled,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
-      future: ApiService.instance.isLoggedIn,
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _checkAuth(),
       builder: (context, snapshot) {
         // Tampilkan splash singkat saat cek token
         if (!snapshot.hasData) {
           return const Scaffold(
-            backgroundColor: Color(0xFF1A3A6B),
+            backgroundColor: Color(0xFF1E3A8A),
             body: Center(
               child: CircularProgressIndicator(color: Colors.white),
             ),
           );
         }
-        if (snapshot.data == true) {
+        
+        final data = snapshot.data!;
+        // Jika sudah login dan biometrik TIDAK aktif, langsung ke dashboard
+        if (data['isLoggedIn'] == true && data['biometricEnabled'] == false) {
           return const MainNavigation();
         }
+        
+        // Jika belum login, ATAU sudah login tapi biometrik aktif -> ke LoginScreen
         return const LoginScreen();
       },
     );

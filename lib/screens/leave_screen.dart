@@ -29,18 +29,24 @@ class _LeaveScreenState extends State<LeaveScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
-  }
-
-  void _loadData() {
+    // Assign langsung tanpa setState di initState
     _future = ApiService.instance.getCutiList(
       bulan: _selectedMonth,
       tahun: _selectedYear,
     );
   }
 
+  void _loadData() {
+    setState(() {
+      _future = ApiService.instance.getCutiList(
+        bulan: _selectedMonth,
+        tahun: _selectedYear,
+      );
+    });
+  }
+
   void _refresh() {
-    setState(() => _loadData());
+    _loadData();
   }
 
   Color _statusColor(String approvalStatus) {
@@ -195,14 +201,14 @@ class _LeaveScreenState extends State<LeaveScreen> {
                                         Container(
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color: Colors.blue
+                                            color: const Color(0xFF1E3A8A)
                                                 .withValues(alpha: 0.1),
                                             borderRadius:
                                                 BorderRadius.circular(8),
                                           ),
                                           child: Icon(
                                             _jenisIcon(req.jenis),
-                                            color: Colors.blue,
+                                            color: const Color(0xFF1E3A8A),
                                             size: 20,
                                           ),
                                         ),
@@ -248,7 +254,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
                                           style: const TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.bold,
-                                            color: Colors.blue,
+                                            color: const Color(0xFF1E3A8A),
                                           ),
                                         ),
                                       ],
@@ -325,7 +331,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.calendar_month, color: Colors.blue),
+          const Icon(Icons.calendar_month, color: Color(0xFF1E3A8A)),
           const SizedBox(width: 12),
           Expanded(
             child: DropdownButtonHideUnderline(
@@ -342,8 +348,8 @@ class _LeaveScreenState extends State<LeaveScreen> {
                   if (value != null) {
                     setState(() {
                       _selectedMonth = value;
-                      _loadData();
                     });
+                    _loadData();
                   }
                 },
               ),
@@ -367,8 +373,8 @@ class _LeaveScreenState extends State<LeaveScreen> {
                   if (value != null) {
                     setState(() {
                       _selectedYear = value;
-                      _loadData();
                     });
+                    _loadData();
                   }
                 },
               ),
@@ -442,11 +448,11 @@ class _LeaveScreenState extends State<LeaveScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.1),
+                      color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(_jenisIcon(req.jenis),
-                        color: Colors.blue, size: 28),
+                        color: const Color(0xFF1E3A8A), size: 28),
                   ),
                   const SizedBox(width: 16),
                   Expanded(

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
-import '../services/data_service.dart';
+import '../services/api_service.dart';
 
 class AttendanceProcessScreen extends StatefulWidget {
   final bool isClockIn;
@@ -18,7 +18,6 @@ class AttendanceProcessScreen extends StatefulWidget {
 }
 
 class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
-  final DataService _dataService = DataService();
   late Timer _timer;
   DateTime _currentTime = DateTime.now();
 
@@ -138,10 +137,14 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
       }
     } catch (e) {
       if (mounted) {
-        // Hindari string interpolation langsung pada $e di Flutter Web karena 
+        // Hindari string interpolation langsung pada $e di Flutter Web karena
         // JS object undefined tidak memiliki method toString, memicu 'Symbol(dartx.toString)'
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal mengambil foto. Pastikan kamera tersedia dan izin diberikan.')),
+          const SnackBar(
+            content: Text(
+              'Gagal mengambil foto. Pastikan kamera tersedia dan izin diberikan.',
+            ),
+          ),
         );
       }
     }
@@ -163,61 +166,64 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
     }
 
     bool isLocationValid = _distanceFromOffice <= radiusInMeters;
-    // Untuk Web gunakan path virtual; Mobile gunakan path asli
-    final photoPath = kIsWeb ? 'web_photo_${DateTime.now().millisecondsSinceEpoch}' : _imageFile!.path;
 
-    if (widget.isClockIn) {
-      _dataService.clockIn(
-        latitude: _currentPosition!.latitude,
-        longitude: _currentPosition!.longitude,
-        photoPath: photoPath,
-        isLocationValid: isLocationValid,
+    if (!isLocationValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Anda di luar area klinik! Tidak bisa absen.'),
+          backgroundColor: Colors.red,
+        ),
       );
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Absen Masuk Berhasil!')));
-      }
-    } else {
-      _dataService.clockOut(
-        latitude: _currentPosition!.latitude,
-        longitude: _currentPosition!.longitude,
-        photoPath: photoPath,
-        isLocationValid: isLocationValid,
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Absen Pulang Berhasil!')));
-      }
+      return;
     }
 
-    if (mounted) Navigator.pop(context);
-  }
-
-  /// Dialog pengaturan jam absen pulang (hanya ditampilkan saat isClockOut)
-  Future<void> _showClockOutTimeSettings() async {
-    int hour = _dataService.clockOutAllowedHour;
-    int minute = _dataService.clockOutAllowedMinute;
-
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay(hour: hour, minute: minute),
-      helpText: 'Atur Jam Minimal Absen Pulang',
-    );
-
-    if (picked != null) {
-      _dataService.setClockOutAllowedTime(picked.hour, picked.minute);
+    try {
+      if (widget.isClockIn) {
+        final result = await ApiService.instance.clockIn(
+          latitude: _currentPosition!.latitude,
+          longitude: _currentPosition!.longitude,
+          isLocationValid: isLocationValid,
+        );
+        if (mounted) {
+          final msg = result.telatMenit > 0
+              ? 'Absen Masuk Berhasil! (Telat ${result.telatMenit} menit)'
+              : 'Absen Masuk Berhasil!';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(msg),
+              backgroundColor: result.telatMenit > 0
+                  ? Colors.orange
+                  : Colors.green,
+            ),
+          );
+        }
+      } else {
+        await ApiService.instance.clockOut(
+          latitude: _currentPosition!.latitude,
+          longitude: _currentPosition!.longitude,
+          isLocationValid: isLocationValid,
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Absen Pulang Berhasil!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Absen pulang diatur mulai pukul ${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}',
-            ),
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: Colors.red,
           ),
         );
       }
     }
+
+    if (mounted) Navigator.pop(context, true);
   }
 
   @override
@@ -232,15 +238,7 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
-        actions: [
-          // Tombol pengaturan jam hanya muncul di halaman Absen Pulang
-          if (!widget.isClockIn)
-            IconButton(
-              onPressed: _showClockOutTimeSettings,
-              icon: const Icon(Icons.settings_outlined),
-              tooltip: 'Atur Jam Absen Pulang',
-            ),
-        ],
+        actions: const [],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -248,8 +246,6 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
           children: [
             _buildHeaderCard(title),
             const SizedBox(height: 16),
-            if (!widget.isClockIn) _buildClockOutTimeInfo(),
-            if (!widget.isClockIn) const SizedBox(height: 16),
             _buildLocationCard(isLocationValid),
             const SizedBox(height: 16),
             _buildPhotoCard(),
@@ -307,55 +303,7 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
     );
   }
 
-  /// Info jam minimal absen pulang
-  Widget _buildClockOutTimeInfo() {
-    final allowedHour = _dataService.clockOutAllowedHour.toString().padLeft(2, '0');
-    final allowedMinute = _dataService.clockOutAllowedMinute.toString().padLeft(2, '0');
-    final canClockOut = _dataService.canClockOut;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: canClockOut ? Colors.green.withOpacity(0.08) : Colors.orange.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: canClockOut ? Colors.green.withOpacity(0.3) : Colors.orange.withOpacity(0.3),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            canClockOut ? Icons.check_circle_outline : Icons.access_time,
-            color: canClockOut ? Colors.green : Colors.orange,
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              canClockOut
-                  ? 'Absen pulang sudah bisa dilakukan'
-                  : 'Absen pulang tersedia mulai pukul $allowedHour:$allowedMinute',
-              style: TextStyle(
-                color: canClockOut ? Colors.green[700] : Colors.orange[700],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          TextButton.icon(
-            onPressed: _showClockOutTimeSettings,
-            icon: const Icon(Icons.edit, size: 16),
-            label: const Text('Atur'),
-            style: TextButton.styleFrom(
-              foregroundColor: canClockOut ? Colors.green : Colors.orange,
-              padding: EdgeInsets.zero,
-              minimumSize: const Size(60, 30),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildLocationCard(bool isLocationValid) {
     return Container(
@@ -506,9 +454,11 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
             width: double.infinity,
             height: 200,
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.05),
+              color: const Color(0xFF1E3A8A).withOpacity(0.05),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.blue.withOpacity(0.2)),
+              border: Border.all(
+                color: const Color(0xFF1E3A8A).withOpacity(0.2),
+              ),
             ),
             child: _imageBytes != null
                 ? ClipRRect(
@@ -522,12 +472,12 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.1),
+                          color: const Color(0xFF1E3A8A).withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
                           Icons.camera_alt_outlined,
-                          color: Colors.blue,
+                          color: Color(0xFF1E3A8A),
                           size: 32,
                         ),
                       ),
@@ -572,8 +522,8 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
     String title = widget.isClockIn ? 'Absen Masuk' : 'Absen Pulang';
     bool hasPhoto = _imageBytes != null;
     bool hasLocation = _currentPosition != null;
-    bool timeAllowed = widget.isClockIn ? true : _dataService.canClockOut;
-    bool canSubmit = hasPhoto && hasLocation && timeAllowed;
+    bool isLocationValid = _distanceFromOffice <= radiusInMeters;
+    bool canSubmit = hasPhoto && hasLocation && isLocationValid;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -591,13 +541,27 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (!widget.isClockIn && !_dataService.canClockOut)
+            if (!isLocationValid && hasLocation)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: Text(
-                  'Absen pulang belum tersedia (mulai pukul ${_dataService.clockOutAllowedHour.toString().padLeft(2, '0')}:${_dataService.clockOutAllowedMinute.toString().padLeft(2, '0')})',
-                  style: const TextStyle(color: Colors.orange, fontSize: 12),
-                  textAlign: TextAlign.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.warning_amber,
+                      color: Colors.red,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Anda di luar area klinik (${_distanceFromOffice.toStringAsFixed(0)}m)',
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             SizedBox(
@@ -606,16 +570,23 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
               child: ElevatedButton(
                 onPressed: canSubmit ? _submitAttendance : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[600],
+                  backgroundColor: const Color(0xFF1E3A8A),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   disabledBackgroundColor: Colors.grey[300],
                 ),
                 child: Text(
-                  title,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  canSubmit
+                      ? title
+                      : (isLocationValid
+                            ? title
+                            : 'Tidak Bisa Absen (Luar Area)'),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),

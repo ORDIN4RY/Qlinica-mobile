@@ -39,7 +39,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFF1A3A6B),
+                  Color(0xFF1E3A8A),
+                  Color(0xFF1565C0),
                 ],
               ),
             ),
@@ -89,7 +90,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         child: const Center(
                           child: Icon(
                             Icons.local_hospital_rounded,
-                            color: Color(0xFF1A3A6B),
+                            color: Color(0xFF1E3A8A),
                             size: 26,
                           ),
                         ),

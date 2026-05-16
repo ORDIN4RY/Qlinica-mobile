@@ -38,35 +38,49 @@ class UserModel {
       pegawai: json['pegawai'] as Map<String, dynamic>?,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+      'role': role,
+      'foto': foto,
+      'pegawai': pegawai,
+    };
+  }
 }
 
 class PresensiRecord {
-  final int id;
+  final int? id;
   final String tanggal;
   final String? jamMasuk;
   final String? jamKeluar;
+  final int telatMenit;
   final String status;
-  final String approvalStatus;
+  final String? approvalStatus;
   final String? keterangan;
 
   const PresensiRecord({
-    required this.id,
+    this.id,
     required this.tanggal,
     this.jamMasuk,
     this.jamKeluar,
+    this.telatMenit = 0,
     required this.status,
-    required this.approvalStatus,
+    this.approvalStatus,
     this.keterangan,
   });
 
   factory PresensiRecord.fromJson(Map<String, dynamic> json) {
     return PresensiRecord(
-      id: json['id'] as int,
+      id: json['id'] as int?,
       tanggal: json['tanggal'] as String,
       jamMasuk: json['jam_masuk'] as String?,
       jamKeluar: json['jam_keluar'] as String?,
-      status: json['status'] as String,
-      approvalStatus: json['approval_status'] as String,
+      telatMenit: (json['telat_menit'] as int?) ?? 0,
+      status: json['status'] as String? ?? 'Alpa',
+      approvalStatus: json['approval_status'] as String?,
       keterangan: json['keterangan'] as String?,
     );
   }
@@ -138,6 +152,8 @@ class ApiService {
   static final ApiService instance = ApiService._();
 
   static const String _tokenKey = 'auth_token';
+  static const String _userKey = 'user_data';
+  static const String _biometricKey = 'biometric_enabled';
 
   /// ── Token management ──────────────────────────
 
@@ -154,11 +170,49 @@ class ApiService {
   Future<void> clearToken() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
+    await clearUser(); // Clear user data on logout too
   }
 
   Future<bool> get isLoggedIn async {
     final token = await getToken();
     return token != null && token.isNotEmpty;
+  }
+
+  /// ── User Management ───────────────────────────
+
+  Future<void> saveUser(UserModel user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userKey, jsonEncode(user.toJson()));
+  }
+
+  Future<UserModel?> getSavedUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userStr = prefs.getString(_userKey);
+    if (userStr != null) {
+      try {
+        return UserModel.fromJson(jsonDecode(userStr));
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  Future<void> clearUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_userKey);
+  }
+
+  /// ── Biometric Management ──────────────────────
+
+  Future<bool> isBiometricEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_biometricKey) ?? false;
+  }
+
+  Future<void> setBiometricEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_biometricKey, value);
   }
 
   /// ── Headers ───────────────────────────────────
@@ -205,8 +259,60 @@ class ApiService {
     try {
       final headers = await _authHeaders();
       await http.post(Uri.parse('$kBaseUrl/logout'), headers: headers);
+    } catch (e) {
+      // Ignore error if network fails during logout
     } finally {
       await clearToken();
+    }
+  }
+
+  /// ── Auth: Update Profil ────────────────────────
+  
+  Future<UserModel> updateProfile({
+    required String name,
+    required String phone,
+    required String address,
+  }) async {
+    final headers = await _authHeaders();
+    final response = await http.put(
+      Uri.parse('$kBaseUrl/profile'),
+      headers: headers,
+      body: jsonEncode({
+        'name': name,
+        'phone': phone,
+        'alamat': address,
+      }),
+    );
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+    if (response.statusCode == 200 && data['success'] == true) {
+      final user = UserModel.fromJson(data['user'] as Map<String, dynamic>);
+      await saveUser(user);
+      return user;
+    }
+
+    throw Exception(data['message'] ?? 'Gagal memperbarui profil.');
+  }
+
+  /// ── Auth: Ganti Password ──────────────────────
+
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    final headers = await _authHeaders();
+    final response = await http.post(
+      Uri.parse('$kBaseUrl/change-password'),
+      headers: headers,
+      body: jsonEncode({
+        'current_password': currentPassword,
+        'new_password': newPassword,
+        'new_password_confirmation': newPassword,
+      }),
+    );
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+    if (response.statusCode != 200 || data['success'] != true) {
+      throw Exception(data['message'] ?? 'Gagal mengubah password.');
     }
   }
 
@@ -230,7 +336,7 @@ class ApiService {
 
   /// ── Presensi: Riwayat ─────────────────────────
 
-  /// Mengembalikan map dengan keys: 'presensi', 'today', 'has_clocked_in', 'has_clocked_out'
+  /// Mengembalikan map dengan keys: 'presensi', 'today', 'has_clocked_in', 'has_clocked_out', 'ringkasan'
   Future<Map<String, dynamic>> getPresensi({int? bulan, int? tahun}) async {
     final headers = await _authHeaders();
 
@@ -257,8 +363,15 @@ class ApiService {
       return {
         'presensi': list,
         'today': today,
-        'has_clocked_in': data['has_clocked_in'] as bool,
-        'has_clocked_out': data['has_clocked_out'] as bool,
+        'jadwal_today': data['jadwal_today'],
+        'jadwal_upcoming': data['jadwal_upcoming'],
+        'has_clocked_in': data['has_clocked_in'] as bool? ?? false,
+        'has_clocked_out': data['has_clocked_out'] as bool? ?? false,
+        'ringkasan': data['ringkasan'] as Map<String, dynamic>? ?? {
+          'hadir': 0,
+          'telat': 0,
+          'alpha': 0,
+        },
       };
     }
 

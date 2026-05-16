@@ -99,6 +99,13 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
       return;
     }
 
+    if (_selectedJenis == 'Izin' && _medicalLetter == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pengajuan izin wajib melampirkan foto bukti')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -148,15 +155,13 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
           key: _formKey,
           child: ListView(
             children: [
-              // Info Jatah Cuti
-              if (_selectedJenis == 'Cuti') _buildQuotaInfo(),
-              
-              const SizedBox(height: 16),
+              // 1. Jenis Pengajuan — harus pertama
               DropdownButtonFormField<String>(
                 value: _selectedJenis,
                 decoration: const InputDecoration(
                   labelText: 'Jenis Pengajuan',
                   border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.category_outlined),
                 ),
                 items: kJenisLabels.entries.map((entry) {
                   return DropdownMenuItem(
@@ -168,7 +173,16 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
                   if (value != null) setState(() => _selectedJenis = value);
                 },
               ),
+
+              // 2. Info Jatah Cuti — tampil di bawah dropdown jika Cuti
+              if (_selectedJenis == 'Cuti') ...[
+                const SizedBox(height: 12),
+                _buildQuotaInfo(),
+              ],
+
               const SizedBox(height: 16),
+
+              // 3. Tanggal Mulai & Selesai
               Row(
                 children: [
                   Expanded(
@@ -178,6 +192,7 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
                         decoration: const InputDecoration(
                           labelText: 'Tanggal Mulai',
                           border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.calendar_today_outlined),
                         ),
                         child: Text(
                           _startDate != null
@@ -195,6 +210,7 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
                         decoration: InputDecoration(
                           labelText: 'Tanggal Selesai',
                           border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.calendar_month_outlined),
                           enabled: _startDate != null,
                         ),
                         child: Text(
@@ -210,17 +226,23 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
                   ),
                 ],
               ),
+
+              // 4. Upload Bukti — Sakit atau Izin
+              if (_selectedJenis == 'Sakit' || _selectedJenis == 'Izin') ...[
+                const SizedBox(height: 16),
+                _buildMedicalLetterPicker(),
+              ],
+
               const SizedBox(height: 16),
-              
-              // Upload Surat Dokter
-              if (_selectedJenis == 'Sakit') _buildMedicalLetterPicker(),
-              
-              const SizedBox(height: 16),
+
+              // 5. Alasan
               TextFormField(
                 controller: _reasonController,
                 decoration: const InputDecoration(
                   labelText: 'Alasan / Keterangan',
                   border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.notes_outlined),
+                  alignLabelWithHint: true,
                 ),
                 maxLines: 3,
                 maxLength: 500,
@@ -231,20 +253,42 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
                   return null;
                 },
               ),
+
               const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _submitForm,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+
+              // 6. Tombol Submit
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _submitForm,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E3A8A),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Kirim Pengajuan',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Kirim Pengajuan'),
               ),
+              const SizedBox(height: 16),
             ],
           ),
         ),
@@ -261,25 +305,25 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.blue.shade50,
+        color: const Color(0xFFE8EEF9),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blue.shade200),
+        border: Border.all(color: const Color(0xFF9FB4D9)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'Informasi Jatah Cuti Tahunan',
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+            style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A)),
           ),
           const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Total: ${_quota!['total']} hari'),
-              Text('Terpakai: ${_quota!['terpakai']} hari'),
+              Text('Total: ${_quota!["total"]} hari'),
+              Text('Terpakai: ${_quota!["terpakai"]} hari'),
               Text(
-                'Sisa: ${_quota!['sisa']} hari',
+                'Sisa: ${_quota!["sisa"]} hari',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
@@ -293,9 +337,9 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Surat Dokter (Wajib)',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        Text(
+          _selectedJenis == 'Sakit' ? 'Surat Dokter (Wajib)' : 'Foto Bukti / Lampiran (Wajib)',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         InkWell(
@@ -309,12 +353,15 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
               border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
             ),
             child: _medicalLetter == null
-                ? const Column(
+                ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add_a_photo, size: 40, color: Colors.grey),
-                      SizedBox(height: 8),
-                      Text('Ambil Foto Surat Dokter', style: TextStyle(color: Colors.grey)),
+                      const Icon(Icons.add_a_photo, size: 40, color: Colors.grey),
+                      const SizedBox(height: 8),
+                      Text(
+                        _selectedJenis == 'Sakit' ? 'Ambil Foto Surat Dokter' : 'Ambil Foto Bukti Kejadian',
+                        style: const TextStyle(color: Colors.grey),
+                      ),
                     ],
                   )
                 : Stack(

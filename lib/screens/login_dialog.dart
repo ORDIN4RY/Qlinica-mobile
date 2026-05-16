@@ -54,7 +54,7 @@ class _LoginDialogState extends State<LoginDialog>
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Login berhasil!'),
-        backgroundColor: Color(0xFF1A3A6B),
+        backgroundColor: Color(0xFF1E3A8A),
       ),
     );
     Navigator.of(context).pop();
@@ -196,7 +196,7 @@ class _LoginDialogState extends State<LoginDialog>
                             height: 20,
                             child: Checkbox(
                               value: _rememberMe,
-                              activeColor: const Color(0xFF1A3A6B),
+                              activeColor: const Color(0xFF1E3A8A),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(4),
                               ),
@@ -235,12 +235,12 @@ class _LoginDialogState extends State<LoginDialog>
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _onLogin,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1A3A6B),
+                            backgroundColor: const Color(0xFF1E3A8A),
                             foregroundColor: Colors.white,
                             disabledBackgroundColor:
-                                const Color(0xFF1A3A6B).withOpacity(0.6),
+                                const Color(0xFF1E3A8A).withOpacity(0.6),
                             elevation: 2,
-                            shadowColor: const Color(0xFF1A3A6B).withOpacity(0.4),
+                            shadowColor: const Color(0xFF1E3A8A).withOpacity(0.4),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
@@ -291,7 +291,7 @@ class _LoginDialogState extends State<LoginDialog>
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF1A3A6B), width: 1.6),
+        borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 1.6),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
