@@ -10,21 +10,21 @@ const Map<String, String> kJenisLabels = {
   'Sakit': 'Sakit',
 };
 
-class LeaveFormScreen extends StatefulWidget {
-  const LeaveFormScreen({super.key});
+class form_pengajuan extends StatefulWidget {
+  const form_pengajuan({super.key});
 
   @override
-  State<LeaveFormScreen> createState() => _LeaveFormScreenState();
+  State<form_pengajuan> createState() => _form_pengajuanState();
 }
 
-class _LeaveFormScreenState extends State<LeaveFormScreen> {
+class _form_pengajuanState extends State<form_pengajuan> {
   final _formKey = GlobalKey<FormState>();
   String _selectedJenis = 'Cuti';
   DateTime? _startDate;
   DateTime? _endDate;
   final _reasonController = TextEditingController();
   bool _isLoading = false;
-  
+
   // Image picker state
   File? _medicalLetter;
   final ImagePicker _picker = ImagePicker();
@@ -94,14 +94,18 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
 
     if (_selectedJenis == 'Sakit' && _medicalLetter == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pengajuan sakit wajib melampirkan surat dokter')),
+        const SnackBar(
+          content: Text('Pengajuan sakit wajib melampirkan surat dokter'),
+        ),
       );
       return;
     }
 
     if (_selectedJenis == 'Izin' && _medicalLetter == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pengajuan izin wajib melampirkan foto bukti')),
+        const SnackBar(
+          content: Text('Pengajuan izin wajib melampirkan foto bukti'),
+        ),
       );
       return;
     }
@@ -119,7 +123,8 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
 
       if (!mounted) return;
 
-      String pesan = result['message'] as String? ?? 'Pengajuan berhasil dikirim.';
+      String pesan =
+          result['message'] as String? ?? 'Pengajuan berhasil dikirim.';
       Navigator.pop(context, true);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(pesan), backgroundColor: Colors.green),
@@ -128,7 +133,9 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal: ${e.toString().replaceFirst('Exception: ', '')}'),
+          content: Text(
+            'Gagal: ${e.toString().replaceFirst('Exception: ', '')}',
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -146,9 +153,7 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Buat Pengajuan'),
-      ),
+      appBar: AppBar(title: const Text('Buat Pengajuan')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -196,7 +201,10 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
                         ),
                         child: Text(
                           _startDate != null
-                              ? DateFormat('dd MMM yyyy', 'id').format(_startDate!)
+                              ? DateFormat(
+                                  'dd MMM yyyy',
+                                  'id',
+                                ).format(_startDate!)
                               : 'Pilih Tanggal',
                         ),
                       ),
@@ -205,7 +213,9 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: InkWell(
-                      onTap: _startDate == null ? null : () => _selectDate(context, false),
+                      onTap: _startDate == null
+                          ? null
+                          : () => _selectDate(context, false),
                       child: InputDecorator(
                         decoration: InputDecoration(
                           labelText: 'Tanggal Selesai',
@@ -215,7 +225,10 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
                         ),
                         child: Text(
                           _endDate != null
-                              ? DateFormat('dd MMM yyyy', 'id').format(_endDate!)
+                              ? DateFormat(
+                                  'dd MMM yyyy',
+                                  'id',
+                                ).format(_endDate!)
                               : 'Pilih Tanggal',
                           style: TextStyle(
                             color: _startDate == null ? Colors.grey : null,
@@ -314,7 +327,10 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
         children: [
           const Text(
             'Informasi Jatah Cuti Tahunan',
-            style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A)),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E3A8A),
+            ),
           ),
           const SizedBox(height: 4),
           Row(
@@ -338,7 +354,9 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          _selectedJenis == 'Sakit' ? 'Surat Dokter (Wajib)' : 'Foto Bukti / Lampiran (Wajib)',
+          _selectedJenis == 'Sakit'
+              ? 'Surat Dokter (Wajib)'
+              : 'Foto Bukti / Lampiran (Wajib)',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
@@ -350,16 +368,25 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
             decoration: BoxDecoration(
               color: Colors.grey.shade100,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+              border: Border.all(
+                color: Colors.grey.shade300,
+                style: BorderStyle.solid,
+              ),
             ),
             child: _medicalLetter == null
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.add_a_photo, size: 40, color: Colors.grey),
+                      const Icon(
+                        Icons.add_a_photo,
+                        size: 40,
+                        color: Colors.grey,
+                      ),
                       const SizedBox(height: 8),
                       Text(
-                        _selectedJenis == 'Sakit' ? 'Ambil Foto Surat Dokter' : 'Ambil Foto Bukti Kejadian',
+                        _selectedJenis == 'Sakit'
+                            ? 'Ambil Foto Surat Dokter'
+                            : 'Ambil Foto Bukti Kejadian',
                         style: const TextStyle(color: Colors.grey),
                       ),
                     ],
@@ -382,7 +409,8 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
                           backgroundColor: Colors.black54,
                           child: IconButton(
                             icon: const Icon(Icons.close, color: Colors.white),
-                            onPressed: () => setState(() => _medicalLetter = null),
+                            onPressed: () =>
+                                setState(() => _medicalLetter = null),
                           ),
                         ),
                       ),

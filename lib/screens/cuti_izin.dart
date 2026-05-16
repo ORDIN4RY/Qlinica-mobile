@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/api_service.dart';
-import 'leave_form_screen.dart';
+import 'form_pengajuan.dart';
 
 class LeaveScreen extends StatefulWidget {
   const LeaveScreen({super.key});
@@ -22,8 +22,18 @@ class _LeaveScreenState extends State<LeaveScreen> {
   ];
 
   final List<String> _months = [
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+    'Januari',
+    'Februari',
+    'Maret',
+    'April',
+    'Mei',
+    'Juni',
+    'Juli',
+    'Agustus',
+    'September',
+    'Oktober',
+    'November',
+    'Desember',
   ];
 
   @override
@@ -124,7 +134,11 @@ class _LeaveScreenState extends State<LeaveScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.wifi_off, size: 64, color: Colors.grey.shade400),
+                          Icon(
+                            Icons.wifi_off,
+                            size: 64,
+                            color: Colors.grey.shade400,
+                          ),
                           const SizedBox(height: 16),
                           Text(
                             'Gagal memuat data.\n${snapshot.error.toString().replaceFirst('Exception: ', '')}',
@@ -150,7 +164,11 @@ class _LeaveScreenState extends State<LeaveScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.inbox, size: 64, color: Colors.grey.shade400),
+                        Icon(
+                          Icons.inbox,
+                          size: 64,
+                          color: Colors.grey.shade400,
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           'Belum ada pengajuan di bulan\n${_months[_selectedMonth - 1]} $_selectedYear',
@@ -170,7 +188,8 @@ class _LeaveScreenState extends State<LeaveScreen> {
                     return TweenAnimationBuilder<double>(
                       tween: Tween(begin: 0.0, end: 1.0),
                       duration: Duration(
-                          milliseconds: 300 + (index * 50).clamp(0, 500)),
+                        milliseconds: 300 + (index * 50).clamp(0, 500),
+                      ),
                       curve: Curves.easeOutCubic,
                       builder: (context, value, child) {
                         return Transform.translate(
@@ -180,10 +199,13 @@ class _LeaveScreenState extends State<LeaveScreen> {
                       },
                       child: Card(
                         margin: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 6),
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
                         elevation: 2,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         child: InkWell(
                           onTap: () => _showLeaveDetails(context, req),
                           borderRadius: BorderRadius.circular(12),
@@ -201,10 +223,12 @@ class _LeaveScreenState extends State<LeaveScreen> {
                                         Container(
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF1E3A8A)
-                                                .withValues(alpha: 0.1),
-                                            borderRadius:
-                                                BorderRadius.circular(8),
+                                            color: const Color(
+                                              0xFF1E3A8A,
+                                            ).withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
                                           ),
                                           child: Icon(
                                             _jenisIcon(req.jenis),
@@ -216,8 +240,9 @@ class _LeaveScreenState extends State<LeaveScreen> {
                                         Text(
                                           _jenisLabel(req.jenis),
                                           style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16),
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -225,49 +250,58 @@ class _LeaveScreenState extends State<LeaveScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 12),
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.shade50,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                          color: Colors.grey.shade200),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.date_range,
-                                            size: 16, color: Colors.grey),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            req.durasi > 1
-                                                ? '${DateFormat('dd MMM', 'id').format(DateTime.parse(req.tanggalMulai))} - ${DateFormat('dd MMM yyyy', 'id').format(DateTime.parse(req.tanggalSelesai))}'
-                                                : DateFormat('dd MMM yyyy', 'id')
-                                                    .format(DateTime.parse(
-                                                        req.tanggalMulai)),
-                                            style:
-                                                const TextStyle(fontSize: 13),
-                                          ),
-                                        ),
-                                        Text(
-                                          '${req.durasi} Hari',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            color: const Color(0xFF1E3A8A),
-                                          ),
-                                        ),
-                                      ],
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade50,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: Colors.grey.shade200,
                                     ),
                                   ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.date_range,
+                                        size: 16,
+                                        color: Colors.grey,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          req.durasi > 1
+                                              ? '${DateFormat('dd MMM', 'id').format(DateTime.parse(req.tanggalMulai))} - ${DateFormat('dd MMM yyyy', 'id').format(DateTime.parse(req.tanggalSelesai))}'
+                                              : DateFormat(
+                                                  'dd MMM yyyy',
+                                                  'id',
+                                                ).format(
+                                                  DateTime.parse(
+                                                    req.tanggalMulai,
+                                                  ),
+                                                ),
+                                          style: const TextStyle(fontSize: 13),
+                                        ),
+                                      ),
+                                      Text(
+                                        '${req.durasi} Hari',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFF1E3A8A),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                                 if (req.keterangan != null &&
                                     req.keterangan!.isNotEmpty) ...[
                                   const SizedBox(height: 12),
                                   Text(
                                     req.keterangan!,
                                     style: TextStyle(
-                                        color: Colors.grey.shade700,
-                                        fontSize: 14),
+                                      color: Colors.grey.shade700,
+                                      fontSize: 14,
+                                    ),
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -282,10 +316,15 @@ class _LeaveScreenState extends State<LeaveScreen> {
                                           ? 'Diajukan: ${DateFormat('dd MMM yyyy', 'id').format(req.createdAt!)}'
                                           : 'Diajukan: -',
                                       style: const TextStyle(
-                                          fontSize: 12, color: Colors.grey),
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
                                     ),
-                                    const Icon(Icons.chevron_right,
-                                        size: 16, color: Colors.grey),
+                                    const Icon(
+                                      Icons.chevron_right,
+                                      size: 16,
+                                      color: Colors.grey,
+                                    ),
                                   ],
                                 ),
                               ],
@@ -305,8 +344,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
         onPressed: () async {
           final shouldRefresh = await Navigator.push<bool>(
             context,
-            MaterialPageRoute(
-                builder: (context) => const LeaveFormScreen()),
+            MaterialPageRoute(builder: (context) => const form_pengajuan()),
           );
           if (shouldRefresh == true) _refresh();
         },
@@ -416,7 +454,10 @@ class _LeaveScreenState extends State<LeaveScreen> {
           Text(
             label,
             style: TextStyle(
-                color: color, fontSize: 12, fontWeight: FontWeight.bold),
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -451,22 +492,31 @@ class _LeaveScreenState extends State<LeaveScreen> {
                       color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(_jenisIcon(req.jenis),
-                        color: const Color(0xFF1E3A8A), size: 28),
+                    child: Icon(
+                      _jenisIcon(req.jenis),
+                      color: const Color(0xFF1E3A8A),
+                      size: 28,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Detail Pengajuan',
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold)),
+                        const Text(
+                          'Detail Pengajuan',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         if (req.createdAt != null)
                           Text(
                             'Diajukan pada ${DateFormat('dd MMM yyyy', 'id').format(req.createdAt!)}',
                             style: TextStyle(
-                                color: Colors.grey.shade600, fontSize: 13),
+                              color: Colors.grey.shade600,
+                              fontSize: 13,
+                            ),
                           ),
                       ],
                     ),
@@ -480,8 +530,10 @@ class _LeaveScreenState extends State<LeaveScreen> {
                 'Tanggal',
                 req.durasi > 1
                     ? '${DateFormat('dd MMM', 'id').format(DateTime.parse(req.tanggalMulai))} - ${DateFormat('dd MMM yyyy', 'id').format(DateTime.parse(req.tanggalSelesai))}'
-                    : DateFormat('dd MMMM yyyy', 'id')
-                        .format(DateTime.parse(req.tanggalMulai)),
+                    : DateFormat(
+                        'dd MMMM yyyy',
+                        'id',
+                      ).format(DateTime.parse(req.tanggalMulai)),
               ),
               const Divider(height: 24),
               _detailRow('Durasi', '${req.durasi} Hari'),
@@ -489,24 +541,25 @@ class _LeaveScreenState extends State<LeaveScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Status',
-                      style: TextStyle(color: Colors.grey, fontSize: 16)),
+                  const Text(
+                    'Status',
+                    style: TextStyle(color: Colors.grey, fontSize: 16),
+                  ),
                   Text(
                     _statusLabel(req.approvalStatus),
                     style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: color),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
                   ),
                 ],
               ),
               if (req.keterangan != null && req.keterangan!.isNotEmpty) ...[
                 const Divider(height: 24),
-                const Text('Keterangan:',
-                    style: TextStyle(color: Colors.grey)),
+                const Text('Keterangan:', style: TextStyle(color: Colors.grey)),
                 const SizedBox(height: 8),
-                Text(req.keterangan!,
-                    style: const TextStyle(fontSize: 16)),
+                Text(req.keterangan!, style: const TextStyle(fontSize: 16)),
               ],
               const SizedBox(height: 32),
               SizedBox(
@@ -516,7 +569,8 @@ class _LeaveScreenState extends State<LeaveScreen> {
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: const Text('Tutup'),
                 ),
@@ -532,11 +586,11 @@ class _LeaveScreenState extends State<LeaveScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label,
-            style: const TextStyle(color: Colors.grey, fontSize: 16)),
-        Text(value,
-            style: const TextStyle(
-                fontSize: 16, fontWeight: FontWeight.w500)),
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 16)),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
       ],
     );
   }
