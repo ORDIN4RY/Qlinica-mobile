@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class LoginDialog extends StatefulWidget {
   const LoginDialog({super.key});
@@ -51,13 +52,13 @@ class _LoginDialogState extends State<LoginDialog>
     setState(() => _isLoading = false);
 
     // TODO: navigasi ke dashboard pasien setelah login berhasil
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Login berhasil!'),
-        backgroundColor: Color(0xFF1E3A8A),
-      ),
+    Get.snackbar(
+      'Berhasil',
+      'Login berhasil!',
+      backgroundColor: const Color(0xFF1E3A8A),
+      colorText: Colors.white,
     );
-    Navigator.of(context).pop();
+    Get.back();
   }
 
   @override
@@ -105,7 +106,7 @@ class _LoginDialogState extends State<LoginDialog>
                             ),
                           ),
                           InkWell(
-                            onTap: () => Navigator.of(context).pop(),
+                            onTap: () => Get.back(),
                             borderRadius: BorderRadius.circular(20),
                             child: const Padding(
                               padding: EdgeInsets.all(4.0),

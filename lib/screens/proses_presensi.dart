@@ -6,11 +6,13 @@ import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
+import 'package:get/get.dart';
 
 class AttendanceProcessScreen extends StatefulWidget {
   final bool isClockIn;
+  final DateTime? shiftStartTime;
 
-  const AttendanceProcessScreen({super.key, required this.isClockIn});
+  const AttendanceProcessScreen({super.key, required this.isClockIn, this.shiftStartTime});
 
   @override
   State<AttendanceProcessScreen> createState() =>
@@ -99,6 +101,15 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
         desiredAccuracy: LocationAccuracy.high,
       );
 
+      if (position.isMocked) {
+        setState(() {
+          _locationError = 'Terdeteksi menggunakan Fake GPS / Mock Location!';
+          _isLoadingLocation = false;
+          _currentPosition = null;
+        });
+        return;
+      }
+
       double distanceInMeters = Geolocator.distanceBetween(
         officeLat,
         officeLng,
@@ -139,12 +150,11 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
       if (mounted) {
         // Hindari string interpolation langsung pada $e di Flutter Web karena
         // JS object undefined tidak memiliki method toString, memicu 'Symbol(dartx.toString)'
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Gagal mengambil foto. Pastikan kamera tersedia dan izin diberikan.',
-            ),
-          ),
+        Get.snackbar(
+          'Gagal',
+          'Gagal mengambil foto. Pastikan kamera tersedia dan izin diberikan.',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
         );
       }
     }
@@ -152,28 +162,19 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
 
   Future<void> _submitAttendance() async {
     if (_imageFile == null || _imageBytes == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Harap ambil foto terlebih dahulu!')),
-      );
+      Get.snackbar('Peringatan', 'Harap ambil foto terlebih dahulu!', backgroundColor: Colors.orange, colorText: Colors.white);
       return;
     }
 
     if (_currentPosition == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Lokasi belum ditemukan!')));
+      Get.snackbar('Peringatan', 'Lokasi belum ditemukan!', backgroundColor: Colors.orange, colorText: Colors.white);
       return;
     }
 
     bool isLocationValid = _distanceFromOffice <= radiusInMeters;
 
     if (!isLocationValid) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Anda di luar area klinik! Tidak bisa absen.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      Get.snackbar('Gagal', 'Anda di luar area klinik! Tidak bisa absen.', backgroundColor: Colors.red, colorText: Colors.white);
       return;
     }
 
@@ -188,13 +189,11 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
           final msg = result.telatMenit > 0
               ? 'Absen Masuk Berhasil! (Telat ${result.telatMenit} menit)'
               : 'Absen Masuk Berhasil!';
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(msg),
-              backgroundColor: result.telatMenit > 0
-                  ? Colors.orange
-                  : Colors.green,
-            ),
+          Get.snackbar(
+            'Absen Berhasil',
+            msg,
+            backgroundColor: result.telatMenit > 0 ? Colors.orange : Colors.green,
+            colorText: Colors.white,
           );
         }
       } else {
@@ -204,26 +203,16 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
           isLocationValid: isLocationValid,
         );
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Absen Pulang Berhasil!'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          Get.snackbar('Berhasil', 'Absen Pulang Berhasil!', backgroundColor: Colors.green, colorText: Colors.white);
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceFirst('Exception: ', '')),
-            backgroundColor: Colors.red,
-          ),
-        );
+          Get.snackbar('Gagal', e.toString().replaceFirst('Exception: ', ''), backgroundColor: Colors.red, colorText: Colors.white);
       }
     }
 
-    if (mounted) Navigator.pop(context, true);
+    Get.back(result: true);
   }
 
   @override
@@ -298,6 +287,40 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
+          if (widget.isClockIn && widget.shiftStartTime != null) ...[
+            const SizedBox(height: 12),
+            Builder(
+              builder: (context) {
+                final isLate = (_currentTime.hour * 60 + _currentTime.minute) >
+                    (widget.shiftStartTime!.hour * 60 + widget.shiftStartTime!.minute);
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isLate ? Icons.warning : Icons.check_circle,
+                        color: isLate ? Colors.orange : Colors.green,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        isLate ? 'Telat' : 'Tepat Waktu',
+                        style: TextStyle(
+                          color: isLate ? Colors.orange : Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
         ],
       ),
     );

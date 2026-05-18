@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'login_screen.dart';
-
+import 'package:get/get.dart';
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -94,20 +94,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isSavingProfile = false;
         _isEditing = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profil berhasil diperbarui!'),
-          backgroundColor: Color(0xFF2E7D32),
-        ),
+      Get.snackbar(
+        'Berhasil',
+        'Profil berhasil diperbarui!',
+        backgroundColor: const Color(0xFF2E7D32),
+        colorText: Colors.white,
       );
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSavingProfile = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: const Color(0xFFE53935),
-        ),
+      Get.snackbar(
+        'Gagal',
+        e.toString().replaceFirst('Exception: ', ''),
+        backgroundColor: const Color(0xFFE53935),
+        colorText: Colors.white,
       );
     }
   }
@@ -128,20 +128,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isSavingPass = false;
         _showChangePass = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password berhasil diubah!'),
-          backgroundColor: Color(0xFF2E7D32),
-        ),
+      Get.snackbar(
+        'Berhasil',
+        'Password berhasil diubah!',
+        backgroundColor: const Color(0xFF2E7D32),
+        colorText: Colors.white,
       );
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSavingPass = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: const Color(0xFFE53935),
-        ),
+      Get.snackbar(
+        'Gagal',
+        e.toString().replaceFirst('Exception: ', ''),
+        backgroundColor: const Color(0xFFE53935),
+        colorText: Colors.white,
       );
     }
   }
@@ -154,11 +154,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         content: const Text('Apakah Anda yakin ingin keluar?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => Get.back(result: false),
             child: const Text('Batal'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () => Get.back(result: true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Logout'),
           ),
@@ -168,11 +168,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (confirm != true || !mounted) return;
     await ApiService.instance.logout();
     if (!mounted) return;
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
+    Get.offAll(() => const LoginScreen());
   }
 
   @override

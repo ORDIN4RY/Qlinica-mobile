@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'login_dialog.dart';
+import 'package:get/get.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -19,11 +20,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   void _showLoginDialog() {
-    showDialog(
-      context: context,
+    Get.dialog(
+      const LoginDialog(),
       barrierDismissible: false,
-      barrierColor: Colors.black.withOpacity(0.45),
-      builder: (context) => const LoginDialog(),
     );
   }
 

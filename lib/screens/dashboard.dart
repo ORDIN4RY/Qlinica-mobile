@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../services/api_service.dart';
 import 'proses_presensi.dart';
 import 'login_screen.dart';
+import 'package:get/get.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -76,11 +77,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         content: const Text('Apakah Anda yakin ingin keluar?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => Get.back(result: false),
             child: const Text('Batal'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () => Get.back(result: true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Logout'),
           ),
@@ -90,11 +91,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (confirm != true || !mounted) return;
     await ApiService.instance.logout();
     if (!mounted) return;
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
+    Get.offAll(() => const LoginScreen());
   }
 
   @override
@@ -389,15 +386,88 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return const SizedBox.shrink();
     }
 
-    if (!_hasClockedIn) {
+    final bool isLibur = _jadwalToday == null || _jadwalToday!['nama'].toString().toLowerCase().contains('libur');
+
+    if (isLibur) {
       return ElevatedButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const AttendanceProcessScreen(isClockIn: true),
+        onPressed: null,
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          disabledBackgroundColor: Colors.grey.shade400,
+          disabledForegroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        child: const Text(
+          'TIDAK BISA ABSEN (LIBUR)',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+      );
+    }
+
+    // Parse jam masuk & pulang
+    DateTime? shiftStartTime;
+    final masukStr = _jadwalToday!['masuk']?.toString();
+    if (masukStr != null && masukStr.contains(':')) {
+      final parts = masukStr.split(':');
+      if (parts.length >= 2) {
+        final h = int.tryParse(parts[0]) ?? 0;
+        final m = int.tryParse(parts[1]) ?? 0;
+        shiftStartTime = DateTime(_currentTime.year, _currentTime.month, _currentTime.day, h, m);
+      }
+    }
+
+    DateTime? shiftEndTime;
+    final pulangStr = _jadwalToday!['pulang']?.toString();
+    if (pulangStr != null && pulangStr.contains(':')) {
+      final parts = pulangStr.split(':');
+      if (parts.length >= 2) {
+        final h = int.tryParse(parts[0]) ?? 0;
+        final m = int.tryParse(parts[1]) ?? 0;
+        shiftEndTime = DateTime(_currentTime.year, _currentTime.month, _currentTime.day, h, m);
+      }
+    }
+
+    if (shiftStartTime != null && shiftEndTime != null) {
+      if (shiftEndTime.isBefore(shiftStartTime)) {
+        if (_currentTime.hour < shiftEndTime.hour || (_currentTime.hour == shiftEndTime.hour && _currentTime.minute < shiftEndTime.minute)) {
+          shiftStartTime = shiftStartTime.subtract(const Duration(days: 1));
+        } else {
+          shiftEndTime = shiftEndTime.add(const Duration(days: 1));
+        }
+      }
+    }
+
+    if (!_hasClockedIn) {
+      if (shiftStartTime != null) {
+        final allowedStartTime = shiftStartTime.subtract(const Duration(hours: 1));
+        if (_currentTime.isBefore(allowedStartTime)) {
+          final timeStr = DateFormat('HH:mm').format(allowedStartTime);
+          return ElevatedButton(
+            onPressed: null,
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              disabledBackgroundColor: Colors.grey.shade400,
+              disabledForegroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: Text(
+              'ABSEN DIBUKA PUKUL $timeStr',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           );
+        }
+      }
+
+      return ElevatedButton(
+        onPressed: () async {
+          final result = await Get.to(() => AttendanceProcessScreen(
+            isClockIn: true,
+            shiftStartTime: shiftStartTime,
+          ));
           if (result == true) _loadTodayStatus();
         },
         style: ElevatedButton.styleFrom(
@@ -414,14 +484,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       );
     } else if (!_hasClockedOut) {
-      return ElevatedButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const AttendanceProcessScreen(isClockIn: false),
+      if (shiftEndTime != null) {
+        final allowedEndTime = shiftEndTime.subtract(const Duration(minutes: 10));
+        if (_currentTime.isBefore(allowedEndTime)) {
+          final timeStr = DateFormat('HH:mm').format(allowedEndTime);
+          return ElevatedButton(
+            onPressed: null,
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              disabledBackgroundColor: Colors.grey.shade400,
+              disabledForegroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: Text(
+              'ABSEN PULANG DIBUKA PUKUL $timeStr',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           );
+        }
+      }
+
+      return ElevatedButton(
+        onPressed: () async {
+          final result = await Get.to(() => const AttendanceProcessScreen(isClockIn: false));
           if (result == true) _loadTodayStatus();
         },
         style: ElevatedButton.styleFrom(

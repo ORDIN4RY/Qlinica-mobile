@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dashboard.dart';
 import 'riwayat_presensi.dart';
-import 'leave_screen.dart';
+import 'cuti_izin.dart';
 import 'profile_screen.dart';
 
 class MainNavigation extends StatefulWidget {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:get/get.dart';
 import 'screens/main_navigation.dart';
 import 'screens/login_screen.dart';
 import 'services/api_service.dart';
@@ -25,7 +26,7 @@ class SahadutaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       title: 'Sahaduta Mobile',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import '../services/api_service.dart';
 import 'main_navigation.dart';
-
+import 'package:get/get.dart';
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -92,11 +92,7 @@ class _LoginScreenState extends State<LoginScreen>
     if (!mounted) return;
 
     if (authenticated) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const MainNavigation()),
-        (route) => false,
-      );
+      Get.offAll(() => const MainNavigation());
     } else {
       setState(() => _isLoading = false);
     }
@@ -136,20 +132,16 @@ class _LoginScreenState extends State<LoginScreen>
       if (!mounted) return;
 
       // Navigasi ke halaman utama, hapus semua route sebelumnya
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const MainNavigation()),
-        (route) => false,
-      );
+      Get.offAll(() => const MainNavigation());
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: const Color(0xFFE53935),
-        ),
+      Get.snackbar(
+        'Gagal Login',
+        e.toString().replaceFirst('Exception: ', ''),
+        backgroundColor: const Color(0xFFE53935),
+        colorText: Colors.white,
       );
     }
   }

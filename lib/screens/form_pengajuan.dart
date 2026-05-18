@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
+import 'package:get/get.dart';
 
 const Map<String, String> kJenisLabels = {
   'Cuti': 'Cuti Tahunan',
@@ -62,10 +63,26 @@ class _form_pengajuanState extends State<form_pengajuan> {
   }
 
   Future<void> _selectDate(BuildContext context, bool isStart) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    
+    DateTime initial;
+    DateTime first;
+    
+    if (isStart) {
+      first = today;
+      initial = _startDate ?? today;
+      if (initial.isBefore(first)) initial = first;
+    } else {
+      first = _startDate ?? today;
+      initial = _endDate ?? first;
+      if (initial.isBefore(first)) initial = first;
+    }
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
+      initialDate: initial,
+      firstDate: first,
       lastDate: DateTime(2101),
     );
     if (picked != null) {
@@ -86,27 +103,17 @@ class _form_pengajuanState extends State<form_pengajuan> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_startDate == null || _endDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pilih tanggal mulai dan selesai')),
-      );
+      Get.snackbar('Peringatan', 'Pilih tanggal mulai dan selesai', backgroundColor: Colors.orange, colorText: Colors.white);
       return;
     }
 
     if (_selectedJenis == 'Sakit' && _medicalLetter == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pengajuan sakit wajib melampirkan surat dokter'),
-        ),
-      );
+      Get.snackbar('Peringatan', 'Pengajuan sakit wajib melampirkan surat dokter', backgroundColor: Colors.orange, colorText: Colors.white);
       return;
     }
 
     if (_selectedJenis == 'Izin' && _medicalLetter == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pengajuan izin wajib melampirkan foto bukti'),
-        ),
-      );
+      Get.snackbar('Peringatan', 'Pengajuan izin wajib melampirkan foto bukti', backgroundColor: Colors.orange, colorText: Colors.white);
       return;
     }
 
@@ -125,19 +132,15 @@ class _form_pengajuanState extends State<form_pengajuan> {
 
       String pesan =
           result['message'] as String? ?? 'Pengajuan berhasil dikirim.';
-      Navigator.pop(context, true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(pesan), backgroundColor: Colors.green),
-      );
+      Get.back(result: true);
+      Get.snackbar('Berhasil', pesan, backgroundColor: Colors.green, colorText: Colors.white);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Gagal: ${e.toString().replaceFirst('Exception: ', '')}',
-          ),
-          backgroundColor: Colors.red,
-        ),
+      Get.snackbar(
+        'Gagal',
+        e.toString().replaceFirst('Exception: ', ''),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);

@@ -5,9 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Ganti dengan IP komputer Anda (yang menjalankan Laravel).
 /// Cara cek IP: jalankan `ipconfig` di CMD, cari IPv4 Address.
 /// Jangan pakai 'localhost' atau '127.0.0.1' dari HP fisik!
-const String kBaseUrl = 'http://192.168.1.10:8080/api/mobile';
+const String kBaseUrl = 'http://192.168.18.81:8080/api/mobile';
 
-/// ─────────────────────────────────────────────────
+/// ───────────────────────────────────────────c──────
 /// Model sederhana untuk User & PresensiRecord
 /// ─────────────────────────────────────────────────
 
@@ -267,7 +267,7 @@ class ApiService {
   }
 
   /// ── Auth: Update Profil ────────────────────────
-  
+
   Future<UserModel> updateProfile({
     required String name,
     required String phone,
@@ -277,11 +277,7 @@ class ApiService {
     final response = await http.put(
       Uri.parse('$kBaseUrl/profile'),
       headers: headers,
-      body: jsonEncode({
-        'name': name,
-        'phone': phone,
-        'alamat': address,
-      }),
+      body: jsonEncode({'name': name, 'phone': phone, 'alamat': address}),
     );
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -297,7 +293,10 @@ class ApiService {
 
   /// ── Auth: Ganti Password ──────────────────────
 
-  Future<void> changePassword(String currentPassword, String newPassword) async {
+  Future<void> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
     final headers = await _authHeaders();
     final response = await http.post(
       Uri.parse('$kBaseUrl/change-password'),
@@ -339,43 +338,77 @@ class ApiService {
   /// Mengembalikan map dengan keys: 'presensi', 'today', 'has_clocked_in', 'has_clocked_out', 'ringkasan'
   Future<Map<String, dynamic>> getPresensi({int? bulan, int? tahun}) async {
     final headers = await _authHeaders();
+    final b = bulan ?? DateTime.now().month;
+    final t = tahun ?? DateTime.now().year;
 
-    final uri = Uri.parse('$kBaseUrl/presensi').replace(
-      queryParameters: {
-        if (bulan != null) 'bulan': bulan.toString(),
-        if (tahun != null) 'tahun': tahun.toString(),
-      },
-    );
+    final uri = Uri.parse(
+      '$kBaseUrl/presensi',
+    ).replace(queryParameters: {'bulan': b.toString(), 'tahun': t.toString()});
 
-    final response = await http.get(uri, headers: headers);
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final cacheKey = 'presensi_cache_${b}_${t}';
+    final prefs = await SharedPreferences.getInstance();
 
-    if (response.statusCode == 200) {
-      final list = (data['presensi'] as List<dynamic>)
-          .map((e) => PresensiRecord.fromJson(e as Map<String, dynamic>))
-          .toList();
+    try {
+      final response = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 7));
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
 
-      final todayJson = data['today'];
-      final today = todayJson != null
-          ? PresensiRecord.fromJson(todayJson as Map<String, dynamic>)
-          : null;
+      if (response.statusCode == 200) {
+        // Cache successful response
+        await prefs.setString(cacheKey, response.body);
 
-      return {
-        'presensi': list,
-        'today': today,
-        'jadwal_today': data['jadwal_today'],
-        'jadwal_upcoming': data['jadwal_upcoming'],
-        'has_clocked_in': data['has_clocked_in'] as bool? ?? false,
-        'has_clocked_out': data['has_clocked_out'] as bool? ?? false,
-        'ringkasan': data['ringkasan'] as Map<String, dynamic>? ?? {
-          'hadir': 0,
-          'telat': 0,
-          'alpha': 0,
-        },
-      };
+        final list = (data['presensi'] as List<dynamic>)
+            .map((e) => PresensiRecord.fromJson(e as Map<String, dynamic>))
+            .toList();
+
+        final todayJson = data['today'];
+        final today = todayJson != null
+            ? PresensiRecord.fromJson(todayJson as Map<String, dynamic>)
+            : null;
+
+        return {
+          'presensi': list,
+          'today': today,
+          'jadwal_today': data['jadwal_today'],
+          'jadwal_upcoming': data['jadwal_upcoming'],
+          'has_clocked_in': data['has_clocked_in'] as bool? ?? false,
+          'has_clocked_out': data['has_clocked_out'] as bool? ?? false,
+          'ringkasan':
+              data['ringkasan'] as Map<String, dynamic>? ??
+              {'hadir': 0, 'telat': 0, 'alpha': 0},
+        };
+      }
+      throw Exception(data['message'] ?? 'Gagal mengambil data presensi.');
+    } catch (e) {
+      // Fallback to cache if request fails (e.g. offline)
+      final cachedStr = prefs.getString(cacheKey);
+      if (cachedStr != null) {
+        final data = jsonDecode(cachedStr) as Map<String, dynamic>;
+        final list = (data['presensi'] as List<dynamic>)
+            .map((e) => PresensiRecord.fromJson(e as Map<String, dynamic>))
+            .toList();
+
+        final todayJson = data['today'];
+        final today = todayJson != null
+            ? PresensiRecord.fromJson(todayJson as Map<String, dynamic>)
+            : null;
+
+        return {
+          'presensi': list,
+          'today': today,
+          'jadwal_today': data['jadwal_today'],
+          'jadwal_upcoming': data['jadwal_upcoming'],
+          'has_clocked_in': data['has_clocked_in'] as bool? ?? false,
+          'has_clocked_out': data['has_clocked_out'] as bool? ?? false,
+          'ringkasan':
+              data['ringkasan'] as Map<String, dynamic>? ??
+              {'hadir': 0, 'telat': 0, 'alpha': 0},
+          'is_offline_cache': true,
+        };
+      }
+      rethrow;
     }
-
-    throw Exception(data['message'] ?? 'Gagal mengambil data presensi.');
   }
 
   /// ── Presensi: Clock In ────────────────────────
@@ -436,41 +469,69 @@ class ApiService {
 
   Future<List<CutiRecord>> getCutiList({int? bulan, int? tahun}) async {
     final headers = await _authHeaders();
-    final uri = Uri.parse('$kBaseUrl/cuti').replace(
-      queryParameters: {
-        if (bulan != null) 'bulan': bulan.toString(),
-        if (tahun != null) 'tahun': tahun.toString(),
-      },
-    );
+    final b = bulan ?? DateTime.now().month;
+    final t = tahun ?? DateTime.now().year;
 
-    final response = await http.get(uri, headers: headers);
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final uri = Uri.parse(
+      '$kBaseUrl/cuti',
+    ).replace(queryParameters: {'bulan': b.toString(), 'tahun': t.toString()});
 
-    if (response.statusCode == 200) {
-      return (data['pengajuan'] as List<dynamic>)
-          .map((e) => CutiRecord.fromJson(e as Map<String, dynamic>))
-          .toList();
+    final cacheKey = 'cuti_list_cache_${b}_${t}';
+    final prefs = await SharedPreferences.getInstance();
+
+    try {
+      final response = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 7));
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        await prefs.setString(cacheKey, response.body);
+
+        return (data['pengajuan'] as List<dynamic>)
+            .map((e) => CutiRecord.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+      throw Exception(data['message'] ?? 'Gagal mengambil data pengajuan.');
+    } catch (e) {
+      final cachedStr = prefs.getString(cacheKey);
+      if (cachedStr != null) {
+        final data = jsonDecode(cachedStr) as Map<String, dynamic>;
+        return (data['pengajuan'] as List<dynamic>)
+            .map((e) => CutiRecord.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+      rethrow;
     }
-
-    throw Exception(data['message'] ?? 'Gagal mengambil data pengajuan.');
   }
 
   /// ── Cuti: Ambil jatah cuti ───────────────────
 
   Future<Map<String, dynamic>> getCutiQuota() async {
     final headers = await _authHeaders();
-    final response = await http.get(
-      Uri.parse('$kBaseUrl/cuti/quota'),
-      headers: headers,
-    );
+    final cacheKey = 'cuti_quota_cache';
+    final prefs = await SharedPreferences.getInstance();
 
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    try {
+      final response = await http
+          .get(Uri.parse('$kBaseUrl/cuti/quota'), headers: headers)
+          .timeout(const Duration(seconds: 7));
 
-    if (response.statusCode == 200) {
-      return data['quota'] as Map<String, dynamic>;
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        await prefs.setString(cacheKey, response.body);
+        return data['quota'] as Map<String, dynamic>;
+      }
+      throw Exception(data['message'] ?? 'Gagal mengambil jatah cuti.');
+    } catch (e) {
+      final cachedStr = prefs.getString(cacheKey);
+      if (cachedStr != null) {
+        final data = jsonDecode(cachedStr) as Map<String, dynamic>;
+        return data['quota'] as Map<String, dynamic>;
+      }
+      rethrow;
     }
-
-    throw Exception(data['message'] ?? 'Gagal mengambil jatah cuti.');
   }
 
   /// ── Cuti: Kirim pengajuan baru ────────────────

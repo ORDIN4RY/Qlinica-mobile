@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/api_service.dart';
 import 'form_pengajuan.dart';
+import 'package:get/get.dart';
 
 class LeaveScreen extends StatefulWidget {
   const LeaveScreen({super.key});
@@ -342,10 +343,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          final shouldRefresh = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(builder: (context) => const form_pengajuan()),
-          );
+          final shouldRefresh = await Get.to<bool>(() => const form_pengajuan());
           if (shouldRefresh == true) _refresh();
         },
         icon: const Icon(Icons.add),
@@ -565,7 +563,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => Get.back(),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
