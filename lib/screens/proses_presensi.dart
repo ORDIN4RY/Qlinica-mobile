@@ -28,8 +28,12 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
   DateTime _currentTime = DateTime.now();
 
   // Office Location (Gedung Jurusan TI Politeknik Negeri Jember)
-  final double officeLat = -8.164348128254245;
-  final double officeLng = 113.70906173210966;
+  // final double officeLat = -8.1575886;
+  // final double officeLng = 113.722782;
+  // final double radiusInMeters = 100;
+
+  final double officeLat = -8.1646404;
+  final double officeLng = 113.7091021;
   final double radiusInMeters = 100;
 
   Position? _currentPosition;
