@@ -12,7 +12,11 @@ class AttendanceProcessScreen extends StatefulWidget {
   final bool isClockIn;
   final DateTime? shiftStartTime;
 
-  const AttendanceProcessScreen({super.key, required this.isClockIn, this.shiftStartTime});
+  const AttendanceProcessScreen({
+    super.key,
+    required this.isClockIn,
+    this.shiftStartTime,
+  });
 
   @override
   State<AttendanceProcessScreen> createState() =>
@@ -24,14 +28,16 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
   DateTime _currentTime = DateTime.now();
 
   // Office Location (Gedung Jurusan TI Politeknik Negeri Jember)
-  final double officeLat = -8.1575886;
-  final double officeLng = 113.722782;
+  final double officeLat = -8.164348128254245;
+  final double officeLng = 113.70906173210966;
   final double radiusInMeters = 100;
 
   Position? _currentPosition;
   double _distanceFromOffice = 0;
   bool _isLoadingLocation = true;
   String _locationError = '';
+  bool _isSubmitting = false;
+  bool _useFrontCamera = true;
 
   // Gunakan XFile agar kompatibel Web & Mobile
   XFile? _imageFile;
@@ -48,6 +54,26 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
     });
 
     _getCurrentLocation();
+    _retrieveLostData();
+  }
+
+  Future<void> _retrieveLostData() async {
+    if (kIsWeb) return;
+    try {
+      final LostDataResponse response = await _picker.retrieveLostData();
+      if (response.isEmpty) {
+        return;
+      }
+      if (response.file != null) {
+        final bytes = await response.file!.readAsBytes();
+        setState(() {
+          _imageFile = response.file;
+          _imageBytes = bytes;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error retrieving lost camera data: $e');
+    }
   }
 
   @override
@@ -134,7 +160,7 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
     try {
       final XFile? photo = await _picker.pickImage(
         source: ImageSource.camera,
-        preferredCameraDevice: CameraDevice.front,
+        preferredCameraDevice: _useFrontCamera ? CameraDevice.front : CameraDevice.rear,
         imageQuality: 80,
       );
 
@@ -162,21 +188,40 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
 
   Future<void> _submitAttendance() async {
     if (_imageFile == null || _imageBytes == null) {
-      Get.snackbar('Peringatan', 'Harap ambil foto terlebih dahulu!', backgroundColor: Colors.orange, colorText: Colors.white);
+      Get.snackbar(
+        'Peringatan',
+        'Harap ambil foto terlebih dahulu!',
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+      );
       return;
     }
 
     if (_currentPosition == null) {
-      Get.snackbar('Peringatan', 'Lokasi belum ditemukan!', backgroundColor: Colors.orange, colorText: Colors.white);
+      Get.snackbar(
+        'Peringatan',
+        'Lokasi belum ditemukan!',
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+      );
       return;
     }
 
     bool isLocationValid = _distanceFromOffice <= radiusInMeters;
 
     if (!isLocationValid) {
-      Get.snackbar('Gagal', 'Anda di luar area klinik! Tidak bisa absen.', backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar(
+        'Gagal',
+        'Anda di luar area klinik! Tidak bisa absen.',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
       return;
     }
+
+    setState(() {
+      _isSubmitting = true;
+    });
 
     try {
       if (widget.isClockIn) {
@@ -185,34 +230,55 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
           longitude: _currentPosition!.longitude,
           isLocationValid: isLocationValid,
         );
+        
+        final isLate = result.telatMenit > 0;
+        final msg = isLate
+            ? 'Absen Masuk Berhasil! (Telat ${result.telatMenit} menit)'
+            : 'Absen Masuk Berhasil!';
+
         if (mounted) {
-          final msg = result.telatMenit > 0
-              ? 'Absen Masuk Berhasil! (Telat ${result.telatMenit} menit)'
-              : 'Absen Masuk Berhasil!';
-          Get.snackbar(
-            'Absen Berhasil',
-            msg,
-            backgroundColor: result.telatMenit > 0 ? Colors.orange : Colors.green,
-            colorText: Colors.white,
-          );
+          Get.back(result: true);
         }
+
+        Get.snackbar(
+          'Absen Berhasil',
+          msg,
+          backgroundColor: isLate ? Colors.orange : Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+        );
       } else {
         await ApiService.instance.clockOut(
           latitude: _currentPosition!.latitude,
           longitude: _currentPosition!.longitude,
           isLocationValid: isLocationValid,
         );
+
         if (mounted) {
-          Get.snackbar('Berhasil', 'Absen Pulang Berhasil!', backgroundColor: Colors.green, colorText: Colors.white);
+          Get.back(result: true);
         }
+
+        Get.snackbar(
+          'Berhasil',
+          'Absen Pulang Berhasil!',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+        );
       }
     } catch (e) {
       if (mounted) {
-          Get.snackbar('Gagal', e.toString().replaceFirst('Exception: ', ''), backgroundColor: Colors.red, colorText: Colors.white);
+        setState(() {
+          _isSubmitting = false;
+        });
+        Get.snackbar(
+          'Gagal',
+          e.toString().replaceFirst('Exception: ', ''),
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
       }
     }
-
-    Get.back(result: true);
   }
 
   @override
@@ -291,10 +357,15 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
             const SizedBox(height: 12),
             Builder(
               builder: (context) {
-                final isLate = (_currentTime.hour * 60 + _currentTime.minute) >
-                    (widget.shiftStartTime!.hour * 60 + widget.shiftStartTime!.minute);
+                final isLate =
+                    (_currentTime.hour * 60 + _currentTime.minute) >
+                    (widget.shiftStartTime!.hour * 60 +
+                        widget.shiftStartTime!.minute);
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
@@ -325,8 +396,6 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
       ),
     );
   }
-
-
 
   Widget _buildLocationCard(bool isLocationValid) {
     return Container(
@@ -462,13 +531,51 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(Icons.camera_alt, color: Colors.blueGrey, size: 20),
-              SizedBox(width: 8),
-              Text(
-                'Foto Absensi',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              const Row(
+                children: [
+                  Icon(Icons.camera_alt, color: Colors.blueGrey, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Foto Absensi',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              InkWell(
+                onTap: () {
+                  setState(() {
+                    _useFrontCamera = !_useFrontCamera;
+                  });
+                },
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _useFrontCamera ? Icons.camera_front : Icons.camera_rear,
+                        size: 14,
+                        color: const Color(0xFF1E3A8A),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _useFrontCamera ? 'Kamera Depan' : 'Kamera Blkg',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E3A8A),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -545,8 +652,8 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
     String title = widget.isClockIn ? 'Absen Masuk' : 'Absen Pulang';
     bool hasPhoto = _imageBytes != null;
     bool hasLocation = _currentPosition != null;
-    bool isLocationValid = _distanceFromOffice <= radiusInMeters;
-    bool canSubmit = hasPhoto && hasLocation && isLocationValid;
+    bool isLocationValid = hasLocation && _distanceFromOffice <= radiusInMeters;
+    bool canSubmit = hasPhoto && hasLocation && isLocationValid && !_isSubmitting;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -600,17 +707,28 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
                   ),
                   disabledBackgroundColor: Colors.grey[300],
                 ),
-                child: Text(
-                  canSubmit
-                      ? title
-                      : (isLocationValid
+                child: _isSubmitting
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(
+                        canSubmit
                             ? title
-                            : 'Tidak Bisa Absen (Luar Area)'),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                            : (!hasPhoto
+                                ? 'Harap Ambil Foto'
+                                : (!hasLocation
+                                    ? (_isLoadingLocation ? 'Mencari Lokasi...' : 'Lokasi Tidak Ditemukan')
+                                    : 'Tidak Bisa Absen (Luar Area)')),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ),
           ],

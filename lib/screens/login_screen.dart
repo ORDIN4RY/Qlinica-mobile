@@ -4,6 +4,7 @@ import 'package:local_auth/local_auth.dart';
 import '../services/api_service.dart';
 import 'main_navigation.dart';
 import 'package:get/get.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -46,7 +47,8 @@ class _LoginScreenState extends State<LoginScreen>
   Future<void> _checkBiometrics() async {
     bool canCheckBiometrics = false;
     try {
-      canCheckBiometrics = await _auth.canCheckBiometrics || await _auth.isDeviceSupported();
+      canCheckBiometrics =
+          await _auth.canCheckBiometrics || await _auth.isDeviceSupported();
     } on PlatformException catch (e) {
       canCheckBiometrics = false;
     }
@@ -57,7 +59,8 @@ class _LoginScreenState extends State<LoginScreen>
     if (!mounted) return;
 
     setState(() {
-      _canCheckBiometrics = canCheckBiometrics && isBiometricEnabled && hasToken;
+      _canCheckBiometrics =
+          canCheckBiometrics && isBiometricEnabled && hasToken;
     });
 
     // Jika biometrik tersedia dan aktif, otomatis munculkan prompt
@@ -88,7 +91,7 @@ class _LoginScreenState extends State<LoginScreen>
       );
       return;
     }
-    
+
     if (!mounted) return;
 
     if (authenticated) {
@@ -120,7 +123,8 @@ class _LoginScreenState extends State<LoginScreen>
 
       if (_rememberMe) {
         try {
-          final canCheck = await _auth.canCheckBiometrics || await _auth.isDeviceSupported();
+          final canCheck =
+              await _auth.canCheckBiometrics || await _auth.isDeviceSupported();
           if (canCheck) {
             await ApiService.instance.setBiometricEnabled(true);
           }
@@ -201,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen>
                               ),
                               const SizedBox(width: 12),
                               const Text(
-                                'Klinik Sahaduta',
+                                'Qlinica',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 18,
@@ -289,8 +293,9 @@ class _LoginScreenState extends State<LoginScreen>
                                         fontSize: 14,
                                         color: Color(0xFF222222),
                                       ),
-                                      decoration:
-                                          _inputDecoration('nama@klinisahaduta.com'),
+                                      decoration: _inputDecoration(
+                                        'nama@klinisahaduta.com',
+                                      ),
                                       validator: (value) {
                                         if (value == null ||
                                             value.trim().isEmpty) {
@@ -320,21 +325,23 @@ class _LoginScreenState extends State<LoginScreen>
                                         fontSize: 14,
                                         color: Color(0xFF222222),
                                       ),
-                                      decoration:
-                                          _inputDecoration('••••••••').copyWith(
-                                        suffixIcon: IconButton(
-                                          icon: Icon(
-                                            _obscurePassword
-                                                ? Icons.visibility_off_outlined
-                                                : Icons.visibility_outlined,
-                                            color: const Color(0xFFAAAAAA),
-                                            size: 20,
+                                      decoration: _inputDecoration('••••••••')
+                                          .copyWith(
+                                            suffixIcon: IconButton(
+                                              icon: Icon(
+                                                _obscurePassword
+                                                    ? Icons
+                                                          .visibility_off_outlined
+                                                    : Icons.visibility_outlined,
+                                                color: const Color(0xFFAAAAAA),
+                                                size: 20,
+                                              ),
+                                              onPressed: () => setState(
+                                                () => _obscurePassword =
+                                                    !_obscurePassword,
+                                              ),
+                                            ),
                                           ),
-                                          onPressed: () => setState(() =>
-                                              _obscurePassword =
-                                                  !_obscurePassword),
-                                        ),
-                                      ),
                                       validator: (value) {
                                         if (value == null || value.isEmpty) {
                                           return 'Password tidak boleh kosong';
@@ -352,15 +359,16 @@ class _LoginScreenState extends State<LoginScreen>
                                           height: 20,
                                           child: Checkbox(
                                             value: _rememberMe,
-                                            activeColor:
-                                                const Color(0xFF1E3A8A),
+                                            activeColor: const Color(
+                                              0xFF1E3A8A,
+                                            ),
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(4),
                                             ),
                                             onChanged: (val) => setState(
-                                                () => _rememberMe =
-                                                    val ?? false),
+                                              () => _rememberMe = val ?? false,
+                                            ),
                                           ),
                                         ),
                                         const SizedBox(width: 10),
@@ -412,21 +420,23 @@ class _LoginScreenState extends State<LoginScreen>
                                       width: double.infinity,
                                       height: 52,
                                       child: ElevatedButton(
-                                        onPressed:
-                                            _isLoading ? null : _onLogin,
+                                        onPressed: _isLoading ? null : _onLogin,
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              const Color(0xFF1E3A8A),
+                                          backgroundColor: const Color(
+                                            0xFF1E3A8A,
+                                          ),
                                           foregroundColor: Colors.white,
-                                          disabledBackgroundColor:
-                                              const Color(0xFF1E3A8A)
-                                                  .withOpacity(0.6),
+                                          disabledBackgroundColor: const Color(
+                                            0xFF1E3A8A,
+                                          ).withOpacity(0.6),
                                           elevation: 2,
-                                          shadowColor: const Color(0xFF1E3A8A)
-                                              .withOpacity(0.35),
+                                          shadowColor: const Color(
+                                            0xFF1E3A8A,
+                                          ).withOpacity(0.35),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(14),
+                                            borderRadius: BorderRadius.circular(
+                                              14,
+                                            ),
                                           ),
                                         ),
                                         child: _isLoading
@@ -435,9 +445,9 @@ class _LoginScreenState extends State<LoginScreen>
                                                 height: 20,
                                                 child:
                                                     CircularProgressIndicator(
-                                                  color: Colors.white,
-                                                  strokeWidth: 2.5,
-                                                ),
+                                                      color: Colors.white,
+                                                      strokeWidth: 2.5,
+                                                    ),
                                               )
                                             : const Text(
                                                 'Login',
@@ -455,8 +465,13 @@ class _LoginScreenState extends State<LoginScreen>
                                         width: double.infinity,
                                         height: 52,
                                         child: OutlinedButton.icon(
-                                          onPressed: _isLoading ? null : _authenticateWithBiometrics,
-                                          icon: const Icon(Icons.fingerprint, size: 24),
+                                          onPressed: _isLoading
+                                              ? null
+                                              : _authenticateWithBiometrics,
+                                          icon: const Icon(
+                                            Icons.fingerprint,
+                                            size: 24,
+                                          ),
                                           label: const Text(
                                             'Login dengan Biometrik',
                                             style: TextStyle(
@@ -465,10 +480,16 @@ class _LoginScreenState extends State<LoginScreen>
                                             ),
                                           ),
                                           style: OutlinedButton.styleFrom(
-                                            foregroundColor: const Color(0xFF1E3A8A),
-                                            side: const BorderSide(color: Color(0xFF1E3A8A), width: 1.5),
+                                            foregroundColor: const Color(
+                                              0xFF1E3A8A,
+                                            ),
+                                            side: const BorderSide(
+                                              color: Color(0xFF1E3A8A),
+                                              width: 1.5,
+                                            ),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(14),
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
                                             ),
                                           ),
                                         ),
@@ -495,12 +516,8 @@ class _LoginScreenState extends State<LoginScreen>
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(
-        color: Color(0xFFBBBBBB),
-        fontSize: 14,
-      ),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+      hintStyle: const TextStyle(color: Color(0xFFBBBBBB), fontSize: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       filled: true,
       fillColor: const Color(0xFFF8F9FB),
       enabledBorder: OutlineInputBorder(
