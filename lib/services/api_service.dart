@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Ganti dengan IP komputer Anda (yang menjalankan Laravel).
 /// Cara cek IP: jalankan `ipconfig` di CMD, cari IPv4 Address.
 /// Jangan pakai 'localhost' atau '127.0.0.1' dari HP fisik!
-const String kBaseUrl = 'http://192.168.18.81:8080/api/mobile';
+const String kBaseUrl = 'http://192.168.1.14:8080/api/mobile';
 
 /// ───────────────────────────────────────────c──────
 /// Model sederhana untuk User & PresensiRecord
