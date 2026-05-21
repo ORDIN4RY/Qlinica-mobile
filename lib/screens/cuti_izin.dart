@@ -23,24 +23,13 @@ class _LeaveScreenState extends State<LeaveScreen> {
   ];
 
   final List<String> _months = [
-    'Januari',
-    'Februari',
-    'Maret',
-    'April',
-    'Mei',
-    'Juni',
-    'Juli',
-    'Agustus',
-    'September',
-    'Oktober',
-    'November',
-    'Desember',
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
   ];
 
   @override
   void initState() {
     super.initState();
-    // Assign langsung tanpa setState di initState
     _future = ApiService.instance.getCutiList(
       bulan: _selectedMonth,
       tahun: _selectedYear,
@@ -56,18 +45,14 @@ class _LeaveScreenState extends State<LeaveScreen> {
     });
   }
 
-  void _refresh() {
-    _loadData();
-  }
-
   Color _statusColor(String approvalStatus) {
     switch (approvalStatus.toLowerCase()) {
       case 'approved':
-        return Colors.green;
+        return const Color(0xFF2E7D32);
       case 'rejected':
-        return Colors.red;
+        return const Color(0xFFE53935);
       default:
-        return Colors.orange;
+        return const Color(0xFFF57C00);
     }
   }
 
@@ -82,14 +67,25 @@ class _LeaveScreenState extends State<LeaveScreen> {
     }
   }
 
+  IconData _statusIcon(String approvalStatus) {
+    switch (approvalStatus.toLowerCase()) {
+      case 'approved':
+        return Icons.check_circle;
+      case 'rejected':
+        return Icons.cancel;
+      default:
+        return Icons.pending;
+    }
+  }
+
   IconData _jenisIcon(String jenis) {
     switch (jenis) {
       case 'Sakit':
-        return Icons.local_hospital;
+        return Icons.local_hospital_outlined;
       case 'Izin':
-        return Icons.assignment;
+        return Icons.assignment_late_outlined;
       default:
-        return Icons.flight_takeoff; // Cuti
+        return Icons.flight_takeoff;
     }
   }
 
@@ -104,22 +100,25 @@ class _LeaveScreenState extends State<LeaveScreen> {
     }
   }
 
+  Color _jenisColor(String jenis) {
+    switch (jenis) {
+      case 'Sakit':
+        return const Color(0xFF00838F);
+      case 'Izin':
+        return const Color(0xFF0288D1);
+      default:
+        return const Color(0xFF1E3A8A);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pengajuan Cuti / Izin'),
-        actions: [
-          IconButton(
-            onPressed: _refresh,
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-          ),
-        ],
-      ),
+      backgroundColor: const Color(0xFFF4F6FB),
       body: Column(
         children: [
-          _buildFilterSection(),
+          _buildHeader(),
+          _buildFilterBar(),
           Expanded(
             child: FutureBuilder<List<CutiRecord>>(
               future: _future,
@@ -131,15 +130,11 @@ class _LeaveScreenState extends State<LeaveScreen> {
                 if (snapshot.hasError) {
                   return Center(
                     child: Padding(
-                      padding: const EdgeInsets.all(32.0),
+                      padding: const EdgeInsets.all(32),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.wifi_off,
-                            size: 64,
-                            color: Colors.grey.shade400,
-                          ),
+                          Icon(Icons.wifi_off, size: 64, color: Colors.grey.shade400),
                           const SizedBox(height: 16),
                           Text(
                             'Gagal memuat data.\n${snapshot.error.toString().replaceFirst('Exception: ', '')}',
@@ -148,9 +143,16 @@ class _LeaveScreenState extends State<LeaveScreen> {
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton.icon(
-                            onPressed: _refresh,
+                            onPressed: _loadData,
                             icon: const Icon(Icons.refresh),
                             label: const Text('Coba Lagi'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF1E3A8A),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -165,16 +167,26 @@ class _LeaveScreenState extends State<LeaveScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.inbox,
-                          size: 64,
-                          color: Colors.grey.shade400,
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E3A8A).withOpacity(0.06),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.inbox_outlined, size: 52, color: Colors.grey.shade400),
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Belum ada pengajuan di bulan\n${_months[_selectedMonth - 1]} $_selectedYear',
-                          style: TextStyle(color: Colors.grey.shade600),
-                          textAlign: TextAlign.center,
+                          'Belum ada pengajuan di bulan',
+                          style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+                        ),
+                        Text(
+                          '${_months[_selectedMonth - 1]} $_selectedYear',
+                          style: const TextStyle(
+                            color: Color(0xFF1E3A8A),
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
@@ -182,157 +194,24 @@ class _LeaveScreenState extends State<LeaveScreen> {
                 }
 
                 return ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
                   itemCount: requests.length,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
                   itemBuilder: (context, index) {
                     final req = requests[index];
                     return TweenAnimationBuilder<double>(
                       tween: Tween(begin: 0.0, end: 1.0),
-                      duration: Duration(
-                        milliseconds: 300 + (index * 50).clamp(0, 500),
-                      ),
+                      duration: Duration(milliseconds: 200 + (index * 50).clamp(0, 400)),
                       curve: Curves.easeOutCubic,
                       builder: (context, value, child) {
-                        return Transform.translate(
-                          offset: Offset(0, 20 * (1 - value)),
-                          child: Opacity(opacity: value, child: child),
+                        return Opacity(
+                          opacity: value,
+                          child: Transform.translate(
+                            offset: Offset(0, 16 * (1 - value)),
+                            child: child,
+                          ),
                         );
                       },
-                      child: Card(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 6,
-                        ),
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: InkWell(
-                          onTap: () => _showLeaveDetails(context, req),
-                          borderRadius: BorderRadius.circular(12),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: const Color(
-                                              0xFF1E3A8A,
-                                            ).withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                          ),
-                                          child: Icon(
-                                            _jenisIcon(req.jenis),
-                                            color: const Color(0xFF1E3A8A),
-                                            size: 20,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Text(
-                                          _jenisLabel(req.jenis),
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    _buildStatusBadge(req.approvalStatus),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade50,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: Colors.grey.shade200,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.date_range,
-                                        size: 16,
-                                        color: Colors.grey,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          req.durasi > 1
-                                              ? '${DateFormat('dd MMM', 'id').format(DateTime.parse(req.tanggalMulai))} - ${DateFormat('dd MMM yyyy', 'id').format(DateTime.parse(req.tanggalSelesai))}'
-                                              : DateFormat(
-                                                  'dd MMM yyyy',
-                                                  'id',
-                                                ).format(
-                                                  DateTime.parse(
-                                                    req.tanggalMulai,
-                                                  ),
-                                                ),
-                                          style: const TextStyle(fontSize: 13),
-                                        ),
-                                      ),
-                                      Text(
-                                        '${req.durasi} Hari',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: const Color(0xFF1E3A8A),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                if (req.keterangan != null &&
-                                    req.keterangan!.isNotEmpty) ...[
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    req.keterangan!,
-                                    style: TextStyle(
-                                      color: Colors.grey.shade700,
-                                      fontSize: 14,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                                const Divider(height: 24),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      req.createdAt != null
-                                          ? 'Diajukan: ${DateFormat('dd MMM yyyy', 'id').format(req.createdAt!)}'
-                                          : 'Diajukan: -',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                    const Icon(
-                                      Icons.chevron_right,
-                                      size: 16,
-                                      color: Colors.grey,
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+                      child: _buildRequestCard(req),
                     );
                   },
                 );
@@ -344,72 +223,105 @@ class _LeaveScreenState extends State<LeaveScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final shouldRefresh = await Get.to<bool>(() => const form_pengajuan());
-          if (shouldRefresh == true) _refresh();
+          if (shouldRefresh == true) _loadData();
         },
+        backgroundColor: const Color(0xFF1E3A8A),
+        foregroundColor: Colors.white,
+        elevation: 4,
         icon: const Icon(Icons.add),
-        label: const Text('Ajukan'),
+        label: const Text(
+          'Ajukan',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
 
-  Widget _buildFilterSection() {
+  Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 52, 20, 20),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1E3A8A), Color(0xFF1565C0)],
+        ),
       ),
       child: Row(
         children: [
-          const Icon(Icons.calendar_month, color: Color(0xFF1E3A8A)),
+          const Icon(Icons.event_note, color: Colors.white, size: 24),
           const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'Pengajuan Cuti / Izin',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          IconButton(
+            onPressed: _loadData,
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            tooltip: 'Refresh',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      color: Colors.white,
+      child: Row(
+        children: [
+          const Icon(Icons.filter_list, color: Color(0xFF1E3A8A), size: 20),
+          const SizedBox(width: 10),
           Expanded(
             child: DropdownButtonHideUnderline(
               child: DropdownButton<int>(
                 value: _selectedMonth,
                 isExpanded: true,
-                items: List.generate(12, (index) {
-                  return DropdownMenuItem(
-                    value: index + 1,
-                    child: Text(_months[index]),
-                  );
-                }),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _selectedMonth = value;
-                    });
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF222222),
+                  fontWeight: FontWeight.w500,
+                ),
+                items: List.generate(12, (i) => DropdownMenuItem(
+                  value: i + 1,
+                  child: Text(_months[i]),
+                )),
+                onChanged: (v) {
+                  if (v != null) {
+                    setState(() => _selectedMonth = v);
                     _loadData();
                   }
                 },
               ),
             ),
           ),
-          const SizedBox(width: 16),
-          Container(width: 1, height: 30, color: Colors.grey.shade300),
-          const SizedBox(width: 16),
+          Container(width: 1, height: 28, color: Colors.grey.shade200),
+          const SizedBox(width: 8),
           Expanded(
             child: DropdownButtonHideUnderline(
               child: DropdownButton<int>(
                 value: _selectedYear,
                 isExpanded: true,
-                items: _years.map((year) {
-                  return DropdownMenuItem(
-                    value: year,
-                    child: Text(year.toString()),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _selectedYear = value;
-                    });
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF222222),
+                  fontWeight: FontWeight.w500,
+                ),
+                items: _years.map((y) => DropdownMenuItem(
+                  value: y,
+                  child: Text(y.toString()),
+                )).toList(),
+                onChanged: (v) {
+                  if (v != null) {
+                    setState(() => _selectedYear = v);
                     _loadData();
                   }
                 },
@@ -421,82 +333,212 @@ class _LeaveScreenState extends State<LeaveScreen> {
     );
   }
 
-  Widget _buildStatusBadge(String approvalStatus) {
-    final color = _statusColor(approvalStatus);
-    final label = _statusLabel(approvalStatus);
+  Widget _buildRequestCard(CutiRecord req) {
+    final statusColor = _statusColor(req.approvalStatus);
+    final jenisColor = _jenisColor(req.jenis);
 
-    IconData icon;
-    switch (approvalStatus.toLowerCase()) {
-      case 'approved':
-        icon = Icons.check_circle;
-        break;
-      case 'rejected':
-        icon = Icons.cancel;
-        break;
-      default:
-        icon = Icons.pending;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
+    return GestureDetector(
+      onTap: () => _showLeaveDetails(req),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: jenisColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(_jenisIcon(req.jenis), color: jenisColor, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _jenisLabel(req.jenis),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                            color: Color(0xFF1A1A2E),
+                          ),
+                        ),
+                        if (req.createdAt != null)
+                          Text(
+                            'Diajukan: ${DateFormat('dd MMM yyyy', 'id').format(req.createdAt!)}',
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                          ),
+                      ],
+                    ),
+                  ),
+                  // Status badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(_statusIcon(req.approvalStatus), size: 12, color: statusColor),
+                        const SizedBox(width: 4),
+                        Text(
+                          _statusLabel(req.approvalStatus),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: statusColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Date info
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E3A8A).withOpacity(0.04),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFF1E3A8A).withOpacity(0.1)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.date_range, size: 15, color: Color(0xFF1E3A8A)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        req.durasi > 1
+                            ? '${DateFormat('dd MMM', 'id').format(DateTime.parse(req.tanggalMulai))} – ${DateFormat('dd MMM yyyy', 'id').format(DateTime.parse(req.tanggalSelesai))}'
+                            : DateFormat('dd MMMM yyyy', 'id').format(DateTime.parse(req.tanggalMulai)),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF1E3A8A),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${req.durasi} Hari',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E3A8A),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (req.keterangan != null && req.keterangan!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  req.keterangan!,
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    'Lihat Detail',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: const Color(0xFF1E3A8A).withOpacity(0.7),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  const Icon(Icons.chevron_right, size: 16, color: Color(0xFF1E3A8A)),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  void _showLeaveDetails(BuildContext context, CutiRecord req) {
+  void _showLeaveDetails(CutiRecord req) {
+    final statusColor = _statusColor(req.approvalStatus);
+    final jenisColor = _jenisColor(req.jenis);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        final color = _statusColor(req.approvalStatus);
-        return Padding(
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
           padding: EdgeInsets.only(
-            left: 24.0,
-            right: 24.0,
-            top: 24.0,
-            bottom: MediaQuery.of(context).padding.bottom + 24.0,
+            left: 24,
+            right: 24,
+            top: 0,
+            bottom: MediaQuery.of(context).padding.bottom + 24,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Handle bar
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 20),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              // Title row
               Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
+                      color: jenisColor.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      _jenisIcon(req.jenis),
-                      color: const Color(0xFF1E3A8A),
-                      size: 28,
-                    ),
+                    child: Icon(_jenisIcon(req.jenis), color: jenisColor, size: 26),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -506,71 +548,106 @@ class _LeaveScreenState extends State<LeaveScreen> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
+                            color: Color(0xFF1A1A2E),
                           ),
                         ),
                         if (req.createdAt != null)
                           Text(
                             'Diajukan pada ${DateFormat('dd MMM yyyy', 'id').format(req.createdAt!)}',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 13,
-                            ),
+                            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                           ),
                       ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              _detailRow('Jenis', _jenisLabel(req.jenis)),
-              const Divider(height: 24),
-              _detailRow(
+              const SizedBox(height: 20),
+              // Detail items
+              _detailTile(Icons.category_outlined, 'Jenis', _jenisLabel(req.jenis), jenisColor),
+              const SizedBox(height: 10),
+              _detailTile(
+                Icons.date_range,
                 'Tanggal',
                 req.durasi > 1
-                    ? '${DateFormat('dd MMM', 'id').format(DateTime.parse(req.tanggalMulai))} - ${DateFormat('dd MMM yyyy', 'id').format(DateTime.parse(req.tanggalSelesai))}'
-                    : DateFormat(
-                        'dd MMMM yyyy',
-                        'id',
-                      ).format(DateTime.parse(req.tanggalMulai)),
+                    ? '${DateFormat('dd MMM', 'id').format(DateTime.parse(req.tanggalMulai))} – ${DateFormat('dd MMM yyyy', 'id').format(DateTime.parse(req.tanggalSelesai))}'
+                    : DateFormat('dd MMMM yyyy', 'id').format(DateTime.parse(req.tanggalMulai)),
+                const Color(0xFF1E3A8A),
               ),
-              const Divider(height: 24),
-              _detailRow('Durasi', '${req.durasi} Hari'),
-              const Divider(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Status',
-                    style: TextStyle(color: Colors.grey, fontSize: 16),
-                  ),
-                  Text(
-                    _statusLabel(req.approvalStatus),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: color,
+              const SizedBox(height: 10),
+              _detailTile(Icons.timer_outlined, 'Durasi', '${req.durasi} Hari', const Color(0xFF1565C0)),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: statusColor.withOpacity(0.2)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(_statusIcon(req.approvalStatus), color: statusColor, size: 16),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Status', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                        Text(
+                          _statusLabel(req.approvalStatus),
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: statusColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
               if (req.keterangan != null && req.keterangan!.isNotEmpty) ...[
-                const Divider(height: 24),
-                const Text('Keterangan:', style: TextStyle(color: Colors.grey)),
-                const SizedBox(height: 8),
-                Text(req.keterangan!, style: const TextStyle(fontSize: 16)),
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Keterangan', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                      const SizedBox(height: 4),
+                      Text(req.keterangan!, style: const TextStyle(fontSize: 14)),
+                    ],
+                  ),
+                ),
               ],
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
+                height: 48,
                 child: ElevatedButton(
                   onPressed: () => Get.back(),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: const Color(0xFF1E3A8A),
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text('Tutup'),
+                  child: const Text(
+                    'Tutup',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ],
@@ -580,16 +657,27 @@ class _LeaveScreenState extends State<LeaveScreen> {
     );
   }
 
-  Widget _detailRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 16)),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-        ),
-      ],
+  Widget _detailTile(IconData icon, String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.12)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color.withOpacity(0.8)),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+              Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1A1A2E))),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

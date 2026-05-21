@@ -54,7 +54,7 @@ class _form_pengajuanState extends State<form_pengajuan> {
 
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(
-      source: ImageSource.gallery,
+      source: ImageSource.camera,
       imageQuality: 70,
     );
     if (image != null) {
@@ -65,10 +65,10 @@ class _form_pengajuanState extends State<form_pengajuan> {
   Future<void> _selectDate(BuildContext context, bool isStart) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    
+
     DateTime initial;
     DateTime first;
-    
+
     if (isStart) {
       first = today;
       initial = _startDate ?? today;
@@ -84,6 +84,17 @@ class _form_pengajuanState extends State<form_pengajuan> {
       initialDate: initial,
       firstDate: first,
       lastDate: DateTime(2101),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF1E3A8A),
+              onPrimary: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       setState(() {
@@ -103,17 +114,20 @@ class _form_pengajuanState extends State<form_pengajuan> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_startDate == null || _endDate == null) {
-      Get.snackbar('Peringatan', 'Pilih tanggal mulai dan selesai', backgroundColor: Colors.orange, colorText: Colors.white);
+      Get.snackbar('Peringatan', 'Pilih tanggal mulai dan selesai',
+          backgroundColor: Colors.orange, colorText: Colors.white);
       return;
     }
 
     if (_selectedJenis == 'Sakit' && _medicalLetter == null) {
-      Get.snackbar('Peringatan', 'Pengajuan sakit wajib melampirkan surat dokter', backgroundColor: Colors.orange, colorText: Colors.white);
+      Get.snackbar('Peringatan', 'Pengajuan sakit wajib melampirkan foto surat dokter',
+          backgroundColor: Colors.orange, colorText: Colors.white);
       return;
     }
 
     if (_selectedJenis == 'Izin' && _medicalLetter == null) {
-      Get.snackbar('Peringatan', 'Pengajuan izin wajib melampirkan foto bukti', backgroundColor: Colors.orange, colorText: Colors.white);
+      Get.snackbar('Peringatan', 'Pengajuan izin wajib melampirkan foto bukti',
+          backgroundColor: Colors.orange, colorText: Colors.white);
       return;
     }
 
@@ -130,10 +144,10 @@ class _form_pengajuanState extends State<form_pengajuan> {
 
       if (!mounted) return;
 
-      String pesan =
-          result['message'] as String? ?? 'Pengajuan berhasil dikirim.';
+      String pesan = result['message'] as String? ?? 'Pengajuan berhasil dikirim.';
       Get.back(result: true);
-      Get.snackbar('Berhasil', pesan, backgroundColor: Colors.green, colorText: Colors.white);
+      Get.snackbar('Berhasil', pesan,
+          backgroundColor: Colors.green, colorText: Colors.white);
     } catch (e) {
       if (!mounted) return;
       Get.snackbar(
@@ -153,197 +167,132 @@ class _form_pengajuanState extends State<form_pengajuan> {
     super.dispose();
   }
 
+  Color _jenisColor(String jenis) {
+    switch (jenis) {
+      case 'Sakit':
+        return const Color(0xFF00838F);
+      case 'Izin':
+        return const Color(0xFF0288D1);
+      default:
+        return const Color(0xFF1E3A8A);
+    }
+  }
+
+  IconData _jenisIcon(String jenis) {
+    switch (jenis) {
+      case 'Sakit':
+        return Icons.local_hospital_outlined;
+      case 'Izin':
+        return Icons.assignment_late_outlined;
+      default:
+        return Icons.flight_takeoff;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Buat Pengajuan')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              // 1. Jenis Pengajuan — harus pertama
-              DropdownButtonFormField<String>(
-                value: _selectedJenis,
-                decoration: const InputDecoration(
-                  labelText: 'Jenis Pengajuan',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.category_outlined),
-                ),
-                items: kJenisLabels.entries.map((entry) {
-                  return DropdownMenuItem(
-                    value: entry.key,
-                    child: Text(entry.value),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) setState(() => _selectedJenis = value);
-                },
-              ),
-
-              // 2. Info Jatah Cuti — tampil di bawah dropdown jika Cuti
-              if (_selectedJenis == 'Cuti') ...[
-                const SizedBox(height: 12),
-                _buildQuotaInfo(),
-              ],
-
-              const SizedBox(height: 16),
-
-              // 3. Tanggal Mulai & Selesai
-              Row(
+      backgroundColor: const Color(0xFFF4F6FB),
+      body: Column(
+        children: [
+          _buildHeader(),
+          Expanded(
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                 children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => _selectDate(context, true),
-                      child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'Tanggal Mulai',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.calendar_today_outlined),
-                        ),
-                        child: Text(
-                          _startDate != null
-                              ? DateFormat(
-                                  'dd MMM yyyy',
-                                  'id',
-                                ).format(_startDate!)
-                              : 'Pilih Tanggal',
-                        ),
-                      ),
-                    ),
+                  // 1. Jenis Pengajuan
+                  _buildSection(
+                    icon: Icons.category_outlined,
+                    title: 'Jenis Pengajuan',
+                    child: _buildJenisPicker(),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: InkWell(
-                      onTap: _startDate == null
-                          ? null
-                          : () => _selectDate(context, false),
-                      child: InputDecorator(
-                        decoration: InputDecoration(
-                          labelText: 'Tanggal Selesai',
-                          border: const OutlineInputBorder(),
-                          prefixIcon: const Icon(Icons.calendar_month_outlined),
-                          enabled: _startDate != null,
-                        ),
-                        child: Text(
-                          _endDate != null
-                              ? DateFormat(
-                                  'dd MMM yyyy',
-                                  'id',
-                                ).format(_endDate!)
-                              : 'Pilih Tanggal',
-                          style: TextStyle(
-                            color: _startDate == null ? Colors.grey : null,
-                          ),
-                        ),
-                      ),
-                    ),
+
+                  // 2. Info Jatah Cuti
+                  if (_selectedJenis == 'Cuti') ...[
+                    const SizedBox(height: 12),
+                    _buildQuotaCard(),
+                  ],
+
+                  const SizedBox(height: 12),
+
+                  // 3. Tanggal
+                  _buildSection(
+                    icon: Icons.date_range,
+                    title: 'Periode',
+                    child: _buildDatePicker(),
                   ),
+
+                  // 4. Upload Bukti
+                  if (_selectedJenis == 'Sakit' || _selectedJenis == 'Izin') ...[
+                    const SizedBox(height: 12),
+                    _buildSection(
+                      icon: Icons.camera_alt_outlined,
+                      title: _selectedJenis == 'Sakit'
+                          ? 'Foto Surat Dokter (Wajib)'
+                          : 'Foto Bukti / Lampiran (Wajib)',
+                      child: _buildImagePicker(),
+                    ),
+                  ],
+
+                  const SizedBox(height: 12),
+
+                  // 5. Alasan
+                  _buildSection(
+                    icon: Icons.notes_outlined,
+                    title: 'Alasan / Keterangan',
+                    child: _buildReasonField(),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // 6. Submit
+                  _buildSubmitButton(),
                 ],
               ),
-
-              // 4. Upload Bukti — Sakit atau Izin
-              if (_selectedJenis == 'Sakit' || _selectedJenis == 'Izin') ...[
-                const SizedBox(height: 16),
-                _buildMedicalLetterPicker(),
-              ],
-
-              const SizedBox(height: 16),
-
-              // 5. Alasan
-              TextFormField(
-                controller: _reasonController,
-                decoration: const InputDecoration(
-                  labelText: 'Alasan / Keterangan',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.notes_outlined),
-                  alignLabelWithHint: true,
-                ),
-                maxLines: 3,
-                maxLength: 500,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Alasan tidak boleh kosong';
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 24),
-
-              // 6. Tombol Submit
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _submitForm,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E3A8A),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text(
-                          'Kirim Pengajuan',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildQuotaInfo() {
-    if (_isLoadingQuota) {
-      return const LinearProgressIndicator();
-    }
-    if (_quota == null) return const SizedBox();
-
+  Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE8EEF9),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF9FB4D9)),
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(4, 52, 20, 20),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1E3A8A), Color(0xFF1565C0)],
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          const Text(
-            'Informasi Jatah Cuti Tahunan',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E3A8A),
-            ),
+          IconButton(
+            onPressed: () => Get.back(),
+            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
           ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          const SizedBox(width: 4),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Total: ${_quota!["total"]} hari'),
-              Text('Terpakai: ${_quota!["terpakai"]} hari'),
+              const Text(
+                'Buat Pengajuan',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               Text(
-                'Sisa: ${_quota!["sisa"]} hari',
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                'Isi formulir pengajuan di bawah',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.75),
+                  fontSize: 13,
+                ),
               ),
             ],
           ),
@@ -352,76 +301,427 @@ class _form_pengajuanState extends State<form_pengajuan> {
     );
   }
 
-  Widget _buildMedicalLetterPicker() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          _selectedJenis == 'Sakit'
-              ? 'Surat Dokter (Wajib)'
-              : 'Foto Bukti / Lampiran (Wajib)',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        InkWell(
-          onTap: _pickImage,
-          child: Container(
-            height: 150,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.grey.shade300,
-                style: BorderStyle.solid,
+  Widget _buildSection({
+    required IconData icon,
+    required String title,
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: const Color(0xFF1E3A8A)),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E3A8A),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildJenisPicker() {
+    return Row(
+      children: kJenisLabels.entries.map((entry) {
+        final selected = _selectedJenis == entry.key;
+        final color = _jenisColor(entry.key);
+        return Expanded(
+          child: GestureDetector(
+            onTap: () => setState(() => _selectedJenis = entry.key),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: selected ? color : Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: selected ? color : Colors.grey.shade300,
+                  width: selected ? 1.5 : 1,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    _jenisIcon(entry.key),
+                    size: 20,
+                    color: selected ? Colors.white : Colors.grey.shade500,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    entry.value,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: selected ? Colors.white : Colors.grey.shade500,
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: _medicalLetter == null
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.add_a_photo,
-                        size: 40,
-                        color: Colors.grey,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _selectedJenis == 'Sakit'
-                            ? 'Ambil Foto Surat Dokter'
-                            : 'Ambil Foto Bukti Kejadian',
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                    ],
-                  )
-                : Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.file(
-                          _medicalLetter!,
-                          width: double.infinity,
-                          height: 150,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      Positioned(
-                        right: 8,
-                        top: 8,
-                        child: CircleAvatar(
-                          backgroundColor: Colors.black54,
-                          child: IconButton(
-                            icon: const Icon(Icons.close, color: Colors.white),
-                            onPressed: () =>
-                                setState(() => _medicalLetter = null),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildQuotaCard() {
+    if (_isLoadingQuota) {
+      return Container(
+        height: 4,
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(2)),
+        child: const LinearProgressIndicator(
+          backgroundColor: Color(0xFFE8EEF9),
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E3A8A)),
+        ),
+      );
+    }
+    if (_quota == null) return const SizedBox();
+
+    final total = _quota!['total'] as int? ?? 0;
+    final terpakai = _quota!['terpakai'] as int? ?? 0;
+    final sisa = _quota!['sisa'] as int? ?? 0;
+    final pct = total > 0 ? (sisa / total).clamp(0.0, 1.0) : 0.0;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E3A8A).withOpacity(0.06),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF1E3A8A).withOpacity(0.15)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.info_outline, size: 16, color: Color(0xFF1E3A8A)),
+              const SizedBox(width: 6),
+              const Text(
+                'Jatah Cuti Tahunan',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: Color(0xFF1E3A8A),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _buildQuotaItem('Total', '$total hari', Colors.grey.shade600),
+              const SizedBox(width: 12),
+              _buildQuotaItem('Terpakai', '$terpakai hari', const Color(0xFFF57C00)),
+              const SizedBox(width: 12),
+              _buildQuotaItem('Sisa', '$sisa hari', const Color(0xFF2E7D32)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: pct,
+              backgroundColor: Colors.grey.shade200,
+              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF2E7D32)),
+              minHeight: 6,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuotaItem(String label, String value, Color color) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDatePicker() {
+    return Row(
+      children: [
+        Expanded(child: _buildDateButton('Tanggal Mulai', _startDate, () => _selectDate(context, true))),
+        const SizedBox(width: 10),
+        Expanded(child: _buildDateButton('Tanggal Selesai', _endDate, _startDate == null ? null : () => _selectDate(context, false))),
+      ],
+    );
+  }
+
+  Widget _buildDateButton(String label, DateTime? date, VoidCallback? onTap) {
+    final hasDate = date != null;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: hasDate ? const Color(0xFF1E3A8A).withOpacity(0.06) : Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: hasDate ? const Color(0xFF1E3A8A).withOpacity(0.3) : Colors.grey.shade300,
           ),
         ),
-      ],
+        child: Row(
+          children: [
+            Icon(
+              Icons.calendar_today_outlined,
+              size: 15,
+              color: hasDate ? const Color(0xFF1E3A8A) : Colors.grey.shade400,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
+                  ),
+                  Text(
+                    hasDate
+                        ? DateFormat('dd MMM yyyy', 'id').format(date!)
+                        : 'Pilih tanggal',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: hasDate ? FontWeight.w600 : FontWeight.normal,
+                      color: hasDate ? const Color(0xFF1A1A2E) : Colors.grey.shade400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImagePicker() {
+    return GestureDetector(
+      onTap: _pickImage,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 160,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: _medicalLetter != null
+              ? Colors.transparent
+              : const Color(0xFF1E3A8A).withOpacity(0.04),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: _medicalLetter != null
+                ? const Color(0xFF2E7D32).withOpacity(0.4)
+                : const Color(0xFF1E3A8A).withOpacity(0.2),
+            width: 1.5,
+          ),
+        ),
+        child: _medicalLetter != null
+            ? Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(11),
+                    child: Image.file(
+                      _medicalLetter!,
+                      width: double.infinity,
+                      height: 160,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  // Overlay buttons
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Row(
+                      children: [
+                        _overlayButton(
+                          icon: Icons.camera_alt,
+                          label: 'Ulangi',
+                          onTap: _pickImage,
+                          color: const Color(0xFF1E3A8A),
+                        ),
+                        const SizedBox(width: 6),
+                        _overlayButton(
+                          icon: Icons.delete_outline,
+                          label: 'Hapus',
+                          onTap: () => setState(() => _medicalLetter = null),
+                          color: Colors.red,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E3A8A).withOpacity(0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt_outlined,
+                      color: Color(0xFF1E3A8A),
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Ambil Foto Sekarang',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Color(0xFF1E3A8A),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Foto langsung dari kamera',
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _overlayButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.92),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 4),
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReasonField() {
+    return TextFormField(
+      controller: _reasonController,
+      decoration: InputDecoration(
+        hintText: 'Tulis alasan atau keterangan...',
+        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 1.5),
+        ),
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        contentPadding: const EdgeInsets.all(12),
+      ),
+      maxLines: 4,
+      maxLength: 500,
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return 'Alasan tidak boleh kosong';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _submitForm,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF1E3A8A),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          elevation: 2,
+          disabledBackgroundColor: Colors.grey.shade300,
+        ),
+        child: _isLoading
+            ? const SizedBox(
+                height: 22,
+                width: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: Colors.white,
+                ),
+              )
+            : const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.send_rounded, size: 18),
+                  SizedBox(width: 8),
+                  Text(
+                    'Kirim Pengajuan',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 }

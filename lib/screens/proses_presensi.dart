@@ -27,11 +27,6 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
   late Timer _timer;
   DateTime _currentTime = DateTime.now();
 
-  // Office Location (Gedung Jurusan TI Politeknik Negeri Jember)
-  // final double officeLat = -8.1575886;
-  // final double officeLng = 113.722782;
-  // final double radiusInMeters = 100;
-
   final double officeLat = -8.1646404;
   final double officeLng = 113.7091021;
   final double radiusInMeters = 100;
@@ -43,7 +38,6 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
   bool _isSubmitting = false;
   bool _useFrontCamera = true;
 
-  // Gunakan XFile agar kompatibel Web & Mobile
   XFile? _imageFile;
   Uint8List? _imageBytes;
   final ImagePicker _picker = ImagePicker();
@@ -65,9 +59,7 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
     if (kIsWeb) return;
     try {
       final LostDataResponse response = await _picker.retrieveLostData();
-      if (response.isEmpty) {
-        return;
-      }
+      if (response.isEmpty) return;
       if (response.file != null) {
         final bytes = await response.file!.readAsBytes();
         setState(() {
@@ -95,7 +87,6 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Test if location services are enabled.
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       setState(() {
@@ -119,8 +110,7 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
 
     if (permission == LocationPermission.deniedForever) {
       setState(() {
-        _locationError =
-            'Izin lokasi ditolak permanen, tidak dapat meminta izin.';
+        _locationError = 'Izin lokasi ditolak permanen, tidak dapat meminta izin.';
         _isLoadingLocation = false;
       });
       return;
@@ -164,12 +154,12 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
     try {
       final XFile? photo = await _picker.pickImage(
         source: ImageSource.camera,
-        preferredCameraDevice: _useFrontCamera ? CameraDevice.front : CameraDevice.rear,
+        preferredCameraDevice:
+            _useFrontCamera ? CameraDevice.front : CameraDevice.rear,
         imageQuality: 80,
       );
 
       if (photo != null) {
-        // Baca bytes agar bisa ditampilkan di Web maupun Mobile
         final bytes = await photo.readAsBytes();
         setState(() {
           _imageFile = photo;
@@ -178,8 +168,6 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
       }
     } catch (e) {
       if (mounted) {
-        // Hindari string interpolation langsung pada $e di Flutter Web karena
-        // JS object undefined tidak memiliki method toString, memicu 'Symbol(dartx.toString)'
         Get.snackbar(
           'Gagal',
           'Gagal mengambil foto. Pastikan kamera tersedia dan izin diberikan.',
@@ -223,9 +211,7 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
       return;
     }
 
-    setState(() {
-      _isSubmitting = true;
-    });
+    setState(() => _isSubmitting = true);
 
     try {
       if (widget.isClockIn) {
@@ -234,16 +220,13 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
           longitude: _currentPosition!.longitude,
           isLocationValid: isLocationValid,
         );
-        
+
         final isLate = result.telatMenit > 0;
         final msg = isLate
             ? 'Absen Masuk Berhasil! (Telat ${result.telatMenit} menit)'
             : 'Absen Masuk Berhasil!';
 
-        if (mounted) {
-          Get.back(result: true);
-        }
-
+        if (mounted) Get.back(result: true);
         Get.snackbar(
           'Absen Berhasil',
           msg,
@@ -258,10 +241,7 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
           isLocationValid: isLocationValid,
         );
 
-        if (mounted) {
-          Get.back(result: true);
-        }
-
+        if (mounted) Get.back(result: true);
         Get.snackbar(
           'Berhasil',
           'Absen Pulang Berhasil!',
@@ -272,9 +252,7 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
+        setState(() => _isSubmitting = false);
         Get.snackbar(
           'Gagal',
           e.toString().replaceFirst('Exception: ', ''),
@@ -288,51 +266,65 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
   @override
   Widget build(BuildContext context) {
     bool isLocationValid = _distanceFromOffice <= radiusInMeters;
-    String title = widget.isClockIn ? 'Absen Masuk' : 'Absen Pulang';
+    final isClockIn = widget.isClockIn;
+    final accentColor = isClockIn ? const Color(0xFF1E3A8A) : Colors.orange;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: Text(title),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-        actions: const [],
+      backgroundColor: const Color(0xFFF4F6FB),
+      body: Column(
+        children: [
+          _buildHeader(accentColor),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              child: Column(
+                children: [
+                  _buildTimeCard(accentColor),
+                  const SizedBox(height: 12),
+                  _buildLocationCard(isLocationValid),
+                  const SizedBox(height: 12),
+                  _buildPhotoCard(),
+                  const SizedBox(height: 80),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            _buildHeaderCard(title),
-            const SizedBox(height: 16),
-            _buildLocationCard(isLocationValid),
-            const SizedBox(height: 16),
-            _buildPhotoCard(),
-          ],
-        ),
-      ),
-      bottomNavigationBar: _buildSubmitButton(),
+      bottomNavigationBar: _buildSubmitButton(accentColor),
     );
   }
 
-  Widget _buildHeaderCard(String title) {
+  Widget _buildHeader(Color accentColor) {
+    final title = widget.isClockIn ? 'Absen Masuk' : 'Absen Pulang';
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(4, 52, 20, 20),
       decoration: BoxDecoration(
-        color: const Color(0xFF2ECC71), // Green color matching design
-        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: widget.isClockIn
+              ? [const Color(0xFF1E3A8A), const Color(0xFF1565C0)]
+              : [const Color(0xFFE65100), const Color(0xFFF57C00)],
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
+          IconButton(
+            onPressed: () => Get.back(),
+            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 4),
+          Icon(
+            widget.isClockIn ? Icons.login : Icons.logout,
+            color: Colors.white,
+            size: 22,
+          ),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                widget.isClockIn ? Icons.login : Icons.logout,
-                color: Colors.white,
-              ),
-              const SizedBox(width: 8),
               Text(
                 title,
                 style: const TextStyle(
@@ -341,24 +333,49 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              Text(
+                DateFormat('EEEE, dd MMM yyyy', 'id').format(_currentTime),
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.75),
+                  fontSize: 12,
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            DateFormat('EEEE, dd MMM yyyy', 'id').format(_currentTime),
-            style: const TextStyle(color: Colors.white70, fontSize: 14),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimeCard(Color accentColor) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          const SizedBox(height: 4),
+        ],
+      ),
+      child: Column(
+        children: [
           Text(
             DateFormat('HH:mm:ss', 'id').format(_currentTime),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 36,
+            style: TextStyle(
+              fontSize: 42,
               fontWeight: FontWeight.bold,
+              color: accentColor,
+              letterSpacing: 2,
             ),
           ),
+          const SizedBox(height: 6),
           if (widget.isClockIn && widget.shiftStartTime != null) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Builder(
               builder: (context) {
                 final isLate =
@@ -366,28 +383,29 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
                     (widget.shiftStartTime!.hour * 60 +
                         widget.shiftStartTime!.minute);
                 return Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: (isLate ? Colors.orange : const Color(0xFF2E7D32)).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: (isLate ? Colors.orange : const Color(0xFF2E7D32)).withOpacity(0.3),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        isLate ? Icons.warning : Icons.check_circle,
-                        color: isLate ? Colors.orange : Colors.green,
+                        isLate ? Icons.warning_amber_rounded : Icons.check_circle_outline,
+                        color: isLate ? Colors.orange : const Color(0xFF2E7D32),
                         size: 16,
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        isLate ? 'Telat' : 'Tepat Waktu',
+                        isLate ? 'Telat dari jadwal shift' : 'Tepat Waktu',
                         style: TextStyle(
-                          color: isLate ? Colors.orange : Colors.green,
+                          color: isLate ? Colors.orange : const Color(0xFF2E7D32),
                           fontWeight: FontWeight.bold,
+                          fontSize: 13,
                         ),
                       ),
                     ],
@@ -410,9 +428,9 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -421,43 +439,94 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
         children: [
           const Row(
             children: [
-              Icon(Icons.location_on, color: Colors.red, size: 20),
+              Icon(Icons.location_on, color: Color(0xFF1E3A8A), size: 18),
               SizedBox(width: 8),
               Text(
                 'Status Lokasi',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: Color(0xFF1E3A8A),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           if (_isLoadingLocation)
-            const Center(child: CircularProgressIndicator())
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: CircularProgressIndicator(),
+              ),
+            )
           else if (_locationError.isNotEmpty)
-            Center(
-              child: Text(
-                _locationError,
-                style: const TextStyle(color: Colors.red),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.06),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.red.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _locationError,
+                      style: const TextStyle(color: Colors.red, fontSize: 13),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: _getCurrentLocation,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'Coba Lagi',
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             )
           else ...[
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: isLocationValid
-                    ? Colors.green.withOpacity(0.1)
-                    : Colors.red.withOpacity(0.1),
+                    ? const Color(0xFF2E7D32).withOpacity(0.07)
+                    : Colors.red.withOpacity(0.07),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isLocationValid
-                      ? Colors.green.withOpacity(0.3)
-                      : Colors.red.withOpacity(0.3),
+                      ? const Color(0xFF2E7D32).withOpacity(0.25)
+                      : Colors.red.withOpacity(0.25),
                 ),
               ),
               child: Row(
                 children: [
-                  Icon(
-                    isLocationValid ? Icons.check_circle : Icons.cancel,
-                    color: isLocationValid ? Colors.green : Colors.red,
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isLocationValid
+                          ? const Color(0xFF2E7D32).withOpacity(0.12)
+                          : Colors.red.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      isLocationValid ? Icons.check_circle : Icons.cancel,
+                      color: isLocationValid ? const Color(0xFF2E7D32) : Colors.red,
+                      size: 22,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -465,49 +534,63 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isLocationValid
-                              ? 'Dalam Area Kantor'
-                              : 'Luar Area Kantor',
+                          isLocationValid ? 'Dalam Area Klinik' : 'Di Luar Area Klinik',
                           style: TextStyle(
-                            color: isLocationValid ? Colors.green : Colors.red,
+                            color: isLocationValid ? const Color(0xFF2E7D32) : Colors.red,
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                            fontSize: 15,
                           ),
                         ),
                         Text(
-                          'Jarak: ${_distanceFromOffice.toStringAsFixed(0)}m dari Kantor',
+                          'Jarak: ${_distanceFromOffice.toStringAsFixed(0)}m dari kantor',
                           style: TextStyle(
                             color: isLocationValid
-                                ? Colors.green[700]
-                                : Colors.red[700],
+                                ? const Color(0xFF2E7D32).withOpacity(0.8)
+                                : Colors.red.withOpacity(0.8),
                             fontSize: 12,
                           ),
                         ),
                       ],
                     ),
                   ),
+                  GestureDetector(
+                    onTap: _getCurrentLocation,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: isLocationValid
+                            ? const Color(0xFF2E7D32).withOpacity(0.1)
+                            : Colors.red.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.refresh,
+                        size: 18,
+                        color: isLocationValid ? const Color(0xFF2E7D32) : Colors.red,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             Row(
               children: [
-                const Icon(Icons.gps_fixed, size: 16, color: Colors.grey),
-                const SizedBox(width: 8),
-                Text(
-                  'GPS: ${_currentPosition?.latitude.toStringAsFixed(6) ?? '-'}, ${_currentPosition?.longitude.toStringAsFixed(6) ?? '-'}',
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                const Icon(Icons.gps_fixed, size: 14, color: Colors.grey),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'GPS: ${_currentPosition?.latitude.toStringAsFixed(6) ?? '-'}, ${_currentPosition?.longitude.toStringAsFixed(6) ?? '-'}',
+                    style: const TextStyle(color: Colors.grey, fontSize: 11),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.radar, size: 16, color: Colors.grey),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
+                const Icon(Icons.radar, size: 14, color: Colors.grey),
+                const SizedBox(width: 4),
                 Text(
-                  'Radius: ${radiusInMeters.toInt()}m',
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  'Radius ${radiusInMeters.toInt()}m',
+                  style: const TextStyle(color: Colors.grey, fontSize: 11),
                 ),
               ],
             ),
@@ -526,9 +609,9 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -540,26 +623,29 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
             children: [
               const Row(
                 children: [
-                  Icon(Icons.camera_alt, color: Colors.blueGrey, size: 20),
+                  Icon(Icons.camera_alt, color: Color(0xFF1E3A8A), size: 18),
                   SizedBox(width: 8),
                   Text(
                     'Foto Absensi',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: Color(0xFF1E3A8A),
+                    ),
                   ),
                 ],
               ),
-              InkWell(
-                onTap: () {
-                  setState(() {
-                    _useFrontCamera = !_useFrontCamera;
-                  });
-                },
-                borderRadius: BorderRadius.circular(20),
+              // Camera switch button
+              GestureDetector(
+                onTap: () => setState(() => _useFrontCamera = !_useFrontCamera),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                    color: const Color(0xFF1E3A8A).withOpacity(0.08),
                     borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: const Color(0xFF1E3A8A).withOpacity(0.2),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -570,7 +656,7 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        _useFrontCamera ? 'Kamera Depan' : 'Kamera Blkg',
+                        _useFrontCamera ? 'Kamera Depan' : 'Kamera Belakang',
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -583,21 +669,24 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
+          // Photo preview area
           Container(
             width: double.infinity,
             height: 200,
             decoration: BoxDecoration(
-              color: const Color(0xFF1E3A8A).withOpacity(0.05),
+              color: const Color(0xFF1E3A8A).withOpacity(0.04),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: const Color(0xFF1E3A8A).withOpacity(0.2),
+                color: _imageBytes != null
+                    ? const Color(0xFF2E7D32).withOpacity(0.4)
+                    : const Color(0xFF1E3A8A).withOpacity(0.2),
+                width: 1.5,
               ),
             ),
             child: _imageBytes != null
                 ? ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    // Gunakan Image.memory agar kompatibel Web & Mobile
+                    borderRadius: BorderRadius.circular(11),
                     child: Image.memory(_imageBytes!, fit: BoxFit.cover),
                   )
                 : Column(
@@ -606,7 +695,7 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                          color: const Color(0xFF1E3A8A).withOpacity(0.08),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -615,35 +704,43 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
                           size: 32,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       const Text(
-                        'Siap Ambil Foto?',
+                        'Belum Ada Foto',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          fontSize: 15,
+                          color: Color(0xFF1A1A2E),
                         ),
                       ),
-                      const Text(
+                      const SizedBox(height: 4),
+                      Text(
                         'Pastikan wajah terlihat jelas',
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                        style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
                       ),
                     ],
                   ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
+            height: 46,
             child: ElevatedButton.icon(
               onPressed: _takePhoto,
-              icon: const Icon(Icons.camera),
-              label: Text(_imageBytes != null ? 'Ulangi Foto' : 'Ambil Foto'),
+              icon: const Icon(Icons.camera_alt, size: 18),
+              label: Text(
+                _imageBytes != null ? 'Ulangi Foto' : 'Ambil Foto',
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2ECC71),
+                backgroundColor: _imageBytes != null
+                    ? const Color(0xFF1565C0)
+                    : const Color(0xFF2ECC71),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
+                elevation: 0,
               ),
             ),
           ),
@@ -652,21 +749,32 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
     );
   }
 
-  Widget _buildSubmitButton() {
-    String title = widget.isClockIn ? 'Absen Masuk' : 'Absen Pulang';
-    bool hasPhoto = _imageBytes != null;
-    bool hasLocation = _currentPosition != null;
-    bool isLocationValid = hasLocation && _distanceFromOffice <= radiusInMeters;
-    bool canSubmit = hasPhoto && hasLocation && isLocationValid && !_isSubmitting;
+  Widget _buildSubmitButton(Color accentColor) {
+    final title = widget.isClockIn ? 'Absen Masuk' : 'Absen Pulang';
+    final bool hasPhoto = _imageBytes != null;
+    final bool hasLocation = _currentPosition != null;
+    final bool isLocationValid = hasLocation && _distanceFromOffice <= radiusInMeters;
+    final bool canSubmit = hasPhoto && hasLocation && isLocationValid && !_isSubmitting;
+
+    String buttonLabel;
+    if (!hasPhoto) {
+      buttonLabel = 'Harap Ambil Foto';
+    } else if (!hasLocation) {
+      buttonLabel = _isLoadingLocation ? 'Mencari Lokasi...' : 'Lokasi Tidak Ditemukan';
+    } else if (!isLocationValid) {
+      buttonLabel = 'Di Luar Area Klinik';
+    } else {
+      buttonLabel = title;
+    }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
             offset: const Offset(0, -4),
           ),
         ],
@@ -675,17 +783,13 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (!isLocationValid && hasLocation)
+            if (!isLocationValid && hasLocation && !_isLoadingLocation)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.warning_amber,
-                      color: Colors.red,
-                      size: 16,
-                    ),
+                    const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 16),
                     const SizedBox(width: 6),
                     Text(
                       'Anda di luar area klinik (${_distanceFromOffice.toStringAsFixed(0)}m)',
@@ -700,34 +804,30 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
               ),
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 52,
               child: ElevatedButton(
                 onPressed: canSubmit ? _submitAttendance : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E3A8A),
+                  backgroundColor: canSubmit ? accentColor : Colors.grey.shade300,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  disabledBackgroundColor: Colors.grey[300],
+                  disabledBackgroundColor: Colors.grey.shade300,
+                  disabledForegroundColor: Colors.grey.shade500,
+                  elevation: canSubmit ? 2 : 0,
                 ),
                 child: _isSubmitting
                     ? const SizedBox(
-                        height: 20,
-                        width: 20,
+                        height: 22,
+                        width: 22,
                         child: CircularProgressIndicator(
                           color: Colors.white,
-                          strokeWidth: 2,
+                          strokeWidth: 2.5,
                         ),
                       )
                     : Text(
-                        canSubmit
-                            ? title
-                            : (!hasPhoto
-                                ? 'Harap Ambil Foto'
-                                : (!hasLocation
-                                    ? (_isLoadingLocation ? 'Mencari Lokasi...' : 'Lokasi Tidak Ditemukan')
-                                    : 'Tidak Bisa Absen (Luar Area)')),
+                        buttonLabel,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
