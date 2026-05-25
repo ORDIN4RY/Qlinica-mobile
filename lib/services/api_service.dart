@@ -203,6 +203,32 @@ class ApiService {
     await prefs.remove(_userKey);
   }
 
+  /// ── Photo Upload ───────────────────────────────
+
+  Future<UserModel> updateProfilePhoto(String imagePath) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final uri = Uri.parse('$kBaseUrl/update-foto');
+    final request = http.MultipartRequest('POST', uri)
+      ..headers['Authorization'] = 'Bearer $token'
+      ..headers['Accept'] = 'application/json'
+      ..files.add(await http.MultipartFile.fromPath('foto', imagePath));
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+    if (response.statusCode == 200 && data['success'] == true) {
+      final user = UserModel.fromJson(data['user'] as Map<String, dynamic>);
+      await saveUser(user);
+      return user;
+    }
+
+    throw Exception(data['message'] ?? 'Gagal memperbarui foto profil');
+  }
+
   /// ── Biometric Management ──────────────────────
 
   Future<bool> isBiometricEnabled() async {

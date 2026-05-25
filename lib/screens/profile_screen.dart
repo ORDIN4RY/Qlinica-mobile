@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'login_screen.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -12,6 +14,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   UserModel? _user;
   bool _isLoading = true;
+  bool _isUploadingPhoto = false;
 
   // Edit Profil
   bool _isEditing = false;
@@ -103,6 +106,71 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSavingProfile = false);
+      Get.snackbar(
+        'Gagal',
+        e.toString().replaceFirst('Exception: ', ''),
+        backgroundColor: const Color(0xFFE53935),
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  Future<void> _showPhotoPicker() async {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Buka Kamera'),
+              onTap: () {
+                Get.back();
+                _uploadPhoto(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Pilih dari Galeri'),
+              onTap: () {
+                Get.back();
+                _uploadPhoto(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _uploadPhoto(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: source, imageQuality: 70);
+      if (pickedFile == null) return;
+
+      setState(() => _isUploadingPhoto = true);
+
+      final updatedUser = await ApiService.instance.updateProfilePhoto(pickedFile.path);
+
+      if (!mounted) return;
+      setState(() {
+        _user = updatedUser;
+        _isUploadingPhoto = false;
+      });
+
+      Get.snackbar(
+        'Berhasil',
+        'Foto profil berhasil diperbarui!',
+        backgroundColor: const Color(0xFF2E7D32),
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isUploadingPhoto = false);
       Get.snackbar(
         'Gagal',
         e.toString().replaceFirst('Exception: ', ''),
@@ -496,40 +564,80 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               // Avatar
-              Container(
-                width: 68,
-                height: 68,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.white.withValues(alpha: 0.35),
-                      Colors.white.withValues(alpha: 0.15),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  border: Border.all(color: Colors.white, width: 2),
-                  image: fullPhotoUrl != null
-                      ? DecorationImage(
-                          image: NetworkImage(fullPhotoUrl),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
-                ),
-                child: fullPhotoUrl == null
-                    ? Center(
-                        child: Text(
-                          initials,
-                          style: const TextStyle(
+              GestureDetector(
+                onTap: _isUploadingPhoto ? null : _showPhotoPicker,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      width: 68,
+                      height: 68,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.white.withValues(alpha: 0.35),
+                            Colors.white.withValues(alpha: 0.15),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        border: Border.all(color: Colors.white, width: 2),
+                        image: fullPhotoUrl != null
+                            ? DecorationImage(
+                                image: NetworkImage(fullPhotoUrl),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                      ),
+                      child: fullPhotoUrl == null
+                          ? Center(
+                              child: Text(
+                                initials,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            )
+                          : null,
+                    ),
+                    if (_isUploadingPhoto)
+                      Container(
+                        width: 68,
+                        height: 68,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black.withOpacity(0.5),
+                        ),
+                        child: const Center(
+                          child: CircularProgressIndicator(
                             color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 2,
+                            strokeWidth: 2,
                           ),
                         ),
-                      )
-                    : null,
+                      ),
+                    if (!_isUploadingPhoto)
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            size: 14,
+                            color: Color(0xFF1E3A8A),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ],
           ),
