@@ -27,8 +27,8 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
   late Timer _timer;
   DateTime _currentTime = DateTime.now();
 
-  final double officeLat = -8.1646404;
-  final double officeLng = 113.7091021;
+  final double officeLat = -8.159804;
+  final double officeLng = 113.723183;
   final double radiusInMeters = 100;
 
   Position? _currentPosition;
@@ -110,7 +110,8 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
 
     if (permission == LocationPermission.deniedForever) {
       setState(() {
-        _locationError = 'Izin lokasi ditolak permanen, tidak dapat meminta izin.';
+        _locationError =
+            'Izin lokasi ditolak permanen, tidak dapat meminta izin.';
         _isLoadingLocation = false;
       });
       return;
@@ -154,8 +155,9 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
     try {
       final XFile? photo = await _picker.pickImage(
         source: ImageSource.camera,
-        preferredCameraDevice:
-            _useFrontCamera ? CameraDevice.front : CameraDevice.rear,
+        preferredCameraDevice: _useFrontCamera
+            ? CameraDevice.front
+            : CameraDevice.rear,
         imageQuality: 80,
       );
 
@@ -313,7 +315,11 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
         children: [
           IconButton(
             onPressed: () => Get.back(),
-            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+            icon: const Icon(
+              Icons.arrow_back_ios_new,
+              color: Colors.white,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 4),
           Icon(
@@ -378,24 +384,28 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
             const SizedBox(height: 8),
             Builder(
               builder: (context) {
-                final isLate =
-                    (_currentTime.hour * 60 + _currentTime.minute) >
-                    (widget.shiftStartTime!.hour * 60 +
-                        widget.shiftStartTime!.minute);
+                final isLate = _currentTime.isAfter(widget.shiftStartTime!);
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: (isLate ? Colors.orange : const Color(0xFF2E7D32)).withOpacity(0.1),
+                    color: (isLate ? Colors.orange : const Color(0xFF2E7D32))
+                        .withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: (isLate ? Colors.orange : const Color(0xFF2E7D32)).withOpacity(0.3),
+                      color: (isLate ? Colors.orange : const Color(0xFF2E7D32))
+                          .withOpacity(0.3),
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        isLate ? Icons.warning_amber_rounded : Icons.check_circle_outline,
+                        isLate
+                            ? Icons.warning_amber_rounded
+                            : Icons.check_circle_outline,
                         color: isLate ? Colors.orange : const Color(0xFF2E7D32),
                         size: 16,
                       ),
@@ -403,7 +413,9 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
                       Text(
                         isLate ? 'Telat dari jadwal shift' : 'Tepat Waktu',
                         style: TextStyle(
-                          color: isLate ? Colors.orange : const Color(0xFF2E7D32),
+                          color: isLate
+                              ? Colors.orange
+                              : const Color(0xFF2E7D32),
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
@@ -480,7 +492,10 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
                   GestureDetector(
                     onTap: _getCurrentLocation,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.red.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -524,7 +539,9 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
                     ),
                     child: Icon(
                       isLocationValid ? Icons.check_circle : Icons.cancel,
-                      color: isLocationValid ? const Color(0xFF2E7D32) : Colors.red,
+                      color: isLocationValid
+                          ? const Color(0xFF2E7D32)
+                          : Colors.red,
                       size: 22,
                     ),
                   ),
@@ -534,9 +551,13 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isLocationValid ? 'Dalam Area Klinik' : 'Di Luar Area Klinik',
+                          isLocationValid
+                              ? 'Dalam Area Klinik'
+                              : 'Di Luar Area Klinik',
                           style: TextStyle(
-                            color: isLocationValid ? const Color(0xFF2E7D32) : Colors.red,
+                            color: isLocationValid
+                                ? const Color(0xFF2E7D32)
+                                : Colors.red,
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
                           ),
@@ -566,7 +587,9 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
                       child: Icon(
                         Icons.refresh,
                         size: 18,
-                        color: isLocationValid ? const Color(0xFF2E7D32) : Colors.red,
+                        color: isLocationValid
+                            ? const Color(0xFF2E7D32)
+                            : Colors.red,
                       ),
                     ),
                   ),
@@ -639,7 +662,10 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
               GestureDetector(
                 onTap: () => setState(() => _useFrontCamera = !_useFrontCamera),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF1E3A8A).withOpacity(0.08),
                     borderRadius: BorderRadius.circular(20),
@@ -650,7 +676,9 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
                   child: Row(
                     children: [
                       Icon(
-                        _useFrontCamera ? Icons.camera_front : Icons.camera_rear,
+                        _useFrontCamera
+                            ? Icons.camera_front
+                            : Icons.camera_rear,
                         size: 14,
                         color: const Color(0xFF1E3A8A),
                       ),
@@ -716,7 +744,10 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
                       const SizedBox(height: 4),
                       Text(
                         'Pastikan wajah terlihat jelas',
-                        style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -730,7 +761,10 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
               icon: const Icon(Icons.camera_alt, size: 18),
               label: Text(
                 _imageBytes != null ? 'Ulangi Foto' : 'Ambil Foto',
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: _imageBytes != null
@@ -753,14 +787,18 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
     final title = widget.isClockIn ? 'Absen Masuk' : 'Absen Pulang';
     final bool hasPhoto = _imageBytes != null;
     final bool hasLocation = _currentPosition != null;
-    final bool isLocationValid = hasLocation && _distanceFromOffice <= radiusInMeters;
-    final bool canSubmit = hasPhoto && hasLocation && isLocationValid && !_isSubmitting;
+    final bool isLocationValid =
+        hasLocation && _distanceFromOffice <= radiusInMeters;
+    final bool canSubmit =
+        hasPhoto && hasLocation && isLocationValid && !_isSubmitting;
 
     String buttonLabel;
     if (!hasPhoto) {
       buttonLabel = 'Harap Ambil Foto';
     } else if (!hasLocation) {
-      buttonLabel = _isLoadingLocation ? 'Mencari Lokasi...' : 'Lokasi Tidak Ditemukan';
+      buttonLabel = _isLoadingLocation
+          ? 'Mencari Lokasi...'
+          : 'Lokasi Tidak Ditemukan';
     } else if (!isLocationValid) {
       buttonLabel = 'Di Luar Area Klinik';
     } else {
@@ -789,7 +827,11 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 16),
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.red,
+                      size: 16,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       'Anda di luar area klinik (${_distanceFromOffice.toStringAsFixed(0)}m)',
@@ -808,7 +850,9 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
               child: ElevatedButton(
                 onPressed: canSubmit ? _submitAttendance : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: canSubmit ? accentColor : Colors.grey.shade300,
+                  backgroundColor: canSubmit
+                      ? accentColor
+                      : Colors.grey.shade300,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),

@@ -138,6 +138,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
         .join();
     final greeting = _getGreeting();
 
+    final fotoUrl = _currentUser?.foto;
+    String? fullPhotoUrl;
+    if (fotoUrl != null && fotoUrl.isNotEmpty) {
+      if (fotoUrl.startsWith('http')) {
+        fullPhotoUrl = fotoUrl;
+      } else {
+        final baseUrl = kBaseUrl.replaceAll('/api/mobile', '/storage');
+        fullPhotoUrl = fotoUrl.startsWith('/') ? '$baseUrl$fotoUrl' : '$baseUrl/$fotoUrl';
+      }
+    }
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 52, 20, 24),
@@ -155,20 +166,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
+              image: fullPhotoUrl != null
+                  ? DecorationImage(
+                      image: NetworkImage(fullPhotoUrl),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
             ),
-            child: Center(
-              child: Text(
-                initials,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            child: fullPhotoUrl == null
+                ? Center(
+                    child: Text(
+                      initials,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  )
+                : null,
           ),
           const SizedBox(width: 14),
           // Greeting text

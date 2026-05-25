@@ -205,17 +205,14 @@ class _LoginScreenState extends State<LoginScreen>
                                   borderRadius: BorderRadius.circular(12),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.15),
+                                      color: Colors.black.withValues(alpha: 0.15),
                                       blurRadius: 8,
                                       offset: const Offset(0, 3),
                                     ),
                                   ],
-                                ),
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.local_hospital_rounded,
-                                    color: Color(0xFF1E3A8A),
-                                    size: 24,
+                                  image: const DecorationImage(
+                                    image: AssetImage('assets/images/app_icon_blue.png'),
+                                    fit: BoxFit.contain,
                                   ),
                                 ),
                               ),

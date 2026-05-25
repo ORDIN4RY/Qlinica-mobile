@@ -30,20 +30,19 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "ic_launcher"
   ios: true
-  image_path: "assets/images/app_icon.png"
+  image_path: "assets/images/app_icon_blue.png"
   min_sdk_android: 21
   adaptive_icon_background: "#1A7A8A"
-  adaptive_icon_foreground: "assets/images/app_icon.png"
+  adaptive_icon_foreground: "assets/images/app_icon_blue.png"
   web:
     generate: false
 
 flutter_native_splash:
-  color: "#1A7A8A"
-  image: assets/images/app_icon.png
+  color: "#1E3A8A"
+  image: assets/images/app_icon_white_padded.png
   android_12:
-    color: "#1A7A8A"
-    image: assets/images/app_icon.png
-    icon_background_color: "#1A7A8A"
+    color: "#1E3A8A"
+    image: assets/images/app_icon_white_padded.png
   fullscreen: false
   android: true
   ios: true

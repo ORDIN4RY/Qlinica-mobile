@@ -197,7 +197,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         children: [
           // ── Premium Header ────────────────────────────────────
-          _buildProfileHeader(name, jabatan, initials),
+          _buildProfileHeader(name, jabatan, initials, _user?.foto),
 
           // ── Body ─────────────────────────────────────────────
           Padding(
@@ -442,7 +442,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // ── Premium Profile Header ──────────────────────────────
-  Widget _buildProfileHeader(String name, String jabatan, String initials) {
+  Widget _buildProfileHeader(String name, String jabatan, String initials, String? fotoUrl) {
+    // Construct full URL if needed (adjust base URL according to your backend)
+    String? fullPhotoUrl;
+    if (fotoUrl != null && fotoUrl.isNotEmpty) {
+      if (fotoUrl.startsWith('http')) {
+        fullPhotoUrl = fotoUrl;
+      } else {
+        // Assume kBaseUrl is something like http://192.168.1.x:8080/api/mobile
+        // and images are served from http://192.168.1.x:8080/storage/...
+        final baseUrl = kBaseUrl.replaceAll('/api/mobile', '/storage');
+        fullPhotoUrl = fotoUrl.startsWith('/') ? '$baseUrl$fotoUrl' : '$baseUrl/$fotoUrl';
+      }
+    }
+
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
@@ -469,7 +482,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 height: 90,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                 ),
               ),
               // Middle ring
@@ -479,7 +492,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.transparent,
-                  border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
                 ),
               ),
               // Avatar
@@ -490,25 +503,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
                     colors: [
-                      Colors.white.withOpacity(0.35),
-                      Colors.white.withOpacity(0.15),
+                      Colors.white.withValues(alpha: 0.35),
+                      Colors.white.withValues(alpha: 0.15),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   border: Border.all(color: Colors.white, width: 2),
+                  image: fullPhotoUrl != null
+                      ? DecorationImage(
+                          image: NetworkImage(fullPhotoUrl),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
                 ),
-                child: Center(
-                  child: Text(
-                    initials,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                ),
+                child: fullPhotoUrl == null
+                    ? Center(
+                        child: Text(
+                          initials,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                      )
+                    : null,
               ),
             ],
           ),
