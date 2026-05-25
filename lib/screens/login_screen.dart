@@ -150,12 +150,21 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
+  void _onForgotPassword() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => const _ForgotPasswordSheet(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.dark.copyWith(
+      value: SystemUiOverlayStyle.light.copyWith(
         statusBarColor: Colors.transparent,
       ),
       child: Scaffold(
@@ -167,15 +176,15 @@ class _LoginScreenState extends State<LoginScreen>
               child: IntrinsicHeight(
                 child: Column(
                   children: [
-                    // ── Top branded header ────────────────────────
+                    // ── Top branded header ─────────────────────────────────
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.fromLTRB(28, 36, 28, 40),
+                      padding: const EdgeInsets.fromLTRB(24, 40, 24, 36),
                       decoration: const BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [Color(0xFF1E3A8A), Color(0xFF1E3A8A)],
+                          colors: [Color(0xFF0D2461), Color(0xFF1E3A8A), Color(0xFF1565C0)],
                         ),
                         borderRadius: BorderRadius.only(
                           bottomLeft: Radius.circular(32),
@@ -185,15 +194,22 @@ class _LoginScreenState extends State<LoginScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Logo
+                          // Logo row
                           Row(
                             children: [
                               Container(
-                                width: 42,
-                                height: 42,
+                                width: 44,
+                                height: 44,
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.15),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
                                 ),
                                 child: const Center(
                                   child: Icon(
@@ -204,30 +220,44 @@ class _LoginScreenState extends State<LoginScreen>
                                 ),
                               ),
                               const SizedBox(width: 12),
-                              const Text(
-                                'Qlinica',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Qlinica',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Sistem Manajemen Klinik',
+                                    style: TextStyle(
+                                      color: Colors.white60,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                          const SizedBox(height: 28),
+                          const SizedBox(height: 32),
                           const Text(
                             'Selamat Datang',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 24,
+                              fontSize: 26,
                               fontWeight: FontWeight.bold,
+                              letterSpacing: 0.3,
                             ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             'Silahkan masuk dengan akun pegawai Anda.',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.82),
+                              color: Colors.white.withOpacity(0.80),
                               fontSize: 14,
                               height: 1.5,
                             ),
@@ -236,7 +266,7 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                     ),
 
-                    // ── Form Card ─────────────────────────────────
+                    // ── Form Card ──────────────────────────────────────────
                     Expanded(
                       child: FadeTransition(
                         opacity: _fadeAnim,
@@ -251,10 +281,10 @@ class _LoginScreenState extends State<LoginScreen>
                                 borderRadius: BorderRadius.circular(20),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.07),
-                                    blurRadius: 20,
+                                    color: const Color(0xFF1E3A8A).withOpacity(0.08),
+                                    blurRadius: 24,
                                     spreadRadius: 1,
-                                    offset: const Offset(0, 4),
+                                    offset: const Offset(0, 6),
                                   ),
                                 ],
                               ),
@@ -264,26 +294,43 @@ class _LoginScreenState extends State<LoginScreen>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Text(
-                                      'SIGN IN',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w800,
-                                        color: Color(0xFF1A1A2E),
-                                        letterSpacing: 0.5,
-                                      ),
+                                    // Header baris dengan label + lupa password
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Container(
+                                              width: 4,
+                                              height: 22,
+                                              decoration: BoxDecoration(
+                                                gradient: const LinearGradient(
+                                                  begin: Alignment.topCenter,
+                                                  end: Alignment.bottomCenter,
+                                                  colors: [Color(0xFF1E3A8A), Color(0xFF1565C0)],
+                                                ),
+                                                borderRadius: BorderRadius.circular(2),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            const Text(
+                                              'Masuk Akun',
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w800,
+                                                color: Color(0xFF1A1A2E),
+                                                letterSpacing: 0.3,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ),
                                     const SizedBox(height: 24),
 
-                                    // Email
-                                    const Text(
-                                      'Email',
-                                      style: TextStyle(
-                                        fontSize: 13.5,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF333333),
-                                      ),
-                                    ),
+                                    // Email field
+                                    _buildFieldLabel('Email Pegawai', Icons.email_outlined),
                                     const SizedBox(height: 8),
                                     TextFormField(
                                       controller: _noRekamMedikController,
@@ -295,6 +342,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       ),
                                       decoration: _inputDecoration(
                                         'nama@klinisahaduta.com',
+                                        prefixIcon: Icons.alternate_email,
                                       ),
                                       validator: (value) {
                                         if (value == null ||
@@ -306,14 +354,23 @@ class _LoginScreenState extends State<LoginScreen>
                                     ),
                                     const SizedBox(height: 20),
 
-                                    // Password
-                                    const Text(
-                                      'Password',
-                                      style: TextStyle(
-                                        fontSize: 13.5,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF333333),
-                                      ),
+                                    // Password field
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        _buildFieldLabel('Password', Icons.lock_outline_rounded),
+                                        GestureDetector(
+                                          onTap: _onForgotPassword,
+                                          child: const Text(
+                                            'Lupa Password?',
+                                            style: TextStyle(
+                                              fontSize: 12.5,
+                                              color: Color(0xFF1E3A8A),
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                     const SizedBox(height: 8),
                                     TextFormField(
@@ -325,23 +382,24 @@ class _LoginScreenState extends State<LoginScreen>
                                         fontSize: 14,
                                         color: Color(0xFF222222),
                                       ),
-                                      decoration: _inputDecoration('••••••••')
-                                          .copyWith(
-                                            suffixIcon: IconButton(
-                                              icon: Icon(
-                                                _obscurePassword
-                                                    ? Icons
-                                                          .visibility_off_outlined
-                                                    : Icons.visibility_outlined,
-                                                color: const Color(0xFFAAAAAA),
-                                                size: 20,
-                                              ),
-                                              onPressed: () => setState(
-                                                () => _obscurePassword =
-                                                    !_obscurePassword,
-                                              ),
-                                            ),
+                                      decoration: _inputDecoration(
+                                        '••••••••',
+                                        prefixIcon: Icons.lock_outline_rounded,
+                                      ).copyWith(
+                                        suffixIcon: IconButton(
+                                          icon: Icon(
+                                            _obscurePassword
+                                                ? Icons.visibility_off_outlined
+                                                : Icons.visibility_outlined,
+                                            color: const Color(0xFFAAAAAA),
+                                            size: 20,
                                           ),
+                                          onPressed: () => setState(
+                                            () => _obscurePassword =
+                                                !_obscurePassword,
+                                          ),
+                                        ),
+                                      ),
                                       validator: (value) {
                                         if (value == null || value.isEmpty) {
                                           return 'Password tidak boleh kosong';
@@ -349,7 +407,7 @@ class _LoginScreenState extends State<LoginScreen>
                                         return null;
                                       },
                                     ),
-                                    const SizedBox(height: 16),
+                                    const SizedBox(height: 14),
 
                                     // Ingat Saya
                                     Row(
@@ -359,12 +417,9 @@ class _LoginScreenState extends State<LoginScreen>
                                           height: 20,
                                           child: Checkbox(
                                             value: _rememberMe,
-                                            activeColor: const Color(
-                                              0xFF1E3A8A,
-                                            ),
+                                            activeColor: const Color(0xFF1E3A8A),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(4),
+                                              borderRadius: BorderRadius.circular(4),
                                             ),
                                             onChanged: (val) => setState(
                                               () => _rememberMe = val ?? false,
@@ -385,14 +440,16 @@ class _LoginScreenState extends State<LoginScreen>
 
                                     // Info text
                                     Container(
-                                      padding: const EdgeInsets.all(14),
+                                      padding: const EdgeInsets.all(13),
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFF0F4FF),
                                         borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: const Color(0xFF1E3A8A).withOpacity(0.12),
+                                        ),
                                       ),
                                       child: Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           const Icon(
                                             Icons.info_outline_rounded,
@@ -413,7 +470,7 @@ class _LoginScreenState extends State<LoginScreen>
                                         ],
                                       ),
                                     ),
-                                    const SizedBox(height: 28),
+                                    const SizedBox(height: 24),
 
                                     // Tombol Login
                                     SizedBox(
@@ -422,45 +479,43 @@ class _LoginScreenState extends State<LoginScreen>
                                       child: ElevatedButton(
                                         onPressed: _isLoading ? null : _onLogin,
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(
-                                            0xFF1E3A8A,
-                                          ),
+                                          backgroundColor: const Color(0xFF1E3A8A),
                                           foregroundColor: Colors.white,
-                                          disabledBackgroundColor: const Color(
-                                            0xFF1E3A8A,
-                                          ).withOpacity(0.6),
-                                          elevation: 2,
-                                          shadowColor: const Color(
-                                            0xFF1E3A8A,
-                                          ).withOpacity(0.35),
+                                          disabledBackgroundColor: const Color(0xFF1E3A8A).withOpacity(0.6),
+                                          elevation: 3,
+                                          shadowColor: const Color(0xFF1E3A8A).withOpacity(0.4),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              14,
-                                            ),
+                                            borderRadius: BorderRadius.circular(14),
                                           ),
                                         ),
                                         child: _isLoading
                                             ? const SizedBox(
                                                 width: 20,
                                                 height: 20,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      color: Colors.white,
-                                                      strokeWidth: 2.5,
-                                                    ),
-                                              )
-                                            : const Text(
-                                                'Login',
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  letterSpacing: 0.5,
+                                                child: CircularProgressIndicator(
+                                                  color: Colors.white,
+                                                  strokeWidth: 2.5,
                                                 ),
+                                              )
+                                            : const Row(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  Icon(Icons.login_rounded, size: 20),
+                                                  SizedBox(width: 8),
+                                                  Text(
+                                                    'Masuk',
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight: FontWeight.bold,
+                                                      letterSpacing: 0.5,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                       ),
                                     ),
                                     if (_canCheckBiometrics) ...[
-                                      const SizedBox(height: 16),
+                                      const SizedBox(height: 12),
                                       SizedBox(
                                         width: double.infinity,
                                         height: 52,
@@ -475,21 +530,18 @@ class _LoginScreenState extends State<LoginScreen>
                                           label: const Text(
                                             'Login dengan Biometrik',
                                             style: TextStyle(
-                                              fontSize: 16,
+                                              fontSize: 15,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
                                           style: OutlinedButton.styleFrom(
-                                            foregroundColor: const Color(
-                                              0xFF1E3A8A,
-                                            ),
+                                            foregroundColor: const Color(0xFF1E3A8A),
                                             side: const BorderSide(
                                               color: Color(0xFF1E3A8A),
                                               width: 1.5,
                                             ),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(14),
+                                              borderRadius: BorderRadius.circular(14),
                                             ),
                                           ),
                                         ),
@@ -513,11 +565,31 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  InputDecoration _inputDecoration(String hint) {
+  Widget _buildFieldLabel(String label, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: const Color(0xFF1E3A8A)),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF333333),
+          ),
+        ),
+      ],
+    );
+  }
+
+  InputDecoration _inputDecoration(String hint, {IconData? prefixIcon}) {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(color: Color(0xFFBBBBBB), fontSize: 14),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+      prefixIcon: prefixIcon != null
+          ? Icon(prefixIcon, size: 18, color: const Color(0xFFAAAAAA))
+          : null,
       filled: true,
       fillColor: const Color(0xFFF8F9FB),
       enabledBorder: OutlineInputBorder(
@@ -535,6 +607,276 @@ class _LoginScreenState extends State<LoginScreen>
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: Color(0xFFE53935), width: 1.6),
+      ),
+    );
+  }
+}
+
+/// ── Bottom sheet Lupa Password ─────────────────────────────────────────────
+class _ForgotPasswordSheet extends StatefulWidget {
+  const _ForgotPasswordSheet();
+
+  @override
+  State<_ForgotPasswordSheet> createState() => _ForgotPasswordSheetState();
+}
+
+class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
+  final _emailCtrl = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  bool _isSending = false;
+  bool _sent = false;
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _onSend() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isSending = true);
+
+    // Simulasi request / nanti bisa diganti ke endpoint API nyata
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!mounted) return;
+    setState(() {
+      _isSending = false;
+      _sent = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Icon header
+            Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1E3A8A), Color(0xFF1565C0)],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.lock_reset_rounded,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Lupa Password',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1A1A2E),
+                      ),
+                    ),
+                    Text(
+                      'Reset kata sandi Anda',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF888888),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            if (_sent) ...[
+              // Success state
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF86EFAC)),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF22C55E).withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.check_circle_outline_rounded,
+                        color: Color(0xFF22C55E),
+                        size: 34,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'Permintaan Terkirim!',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF15803D),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Silahkan hubungi admin klinik untuk mendapatkan password baru ke email:\n${_emailCtrl.text.trim()}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF166534),
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E3A8A),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text(
+                    'Kembali ke Login',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ] else ...[
+              // Form state
+              Text(
+                'Masukkan email yang terdaftar pada akun Anda. Admin klinik akan mengirimkan instruksi reset password.',
+                style: TextStyle(
+                  fontSize: 13.5,
+                  color: Colors.grey.shade600,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Form(
+                key: _formKey,
+                child: TextFormField(
+                  controller: _emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  style: const TextStyle(fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'nama@klinisahaduta.com',
+                    hintStyle: const TextStyle(color: Color(0xFFBBBBBB), fontSize: 14),
+                    labelText: 'Email Terdaftar',
+                    labelStyle: const TextStyle(fontSize: 13, color: Color(0xFF888888)),
+                    prefixIcon: const Icon(Icons.alternate_email, size: 18, color: Color(0xFFAAAAAA)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+                    filled: true,
+                    fillColor: const Color(0xFFF8F9FB),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFFE0E4EC), width: 1.2),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 1.6),
+                    ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFFE53935), width: 1.2),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFFE53935), width: 1.6),
+                    ),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Email wajib diisi';
+                    if (!v.contains('@')) return 'Format email tidak valid';
+                    return null;
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: _isSending ? null : _onSend,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E3A8A),
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: const Color(0xFF1E3A8A).withOpacity(0.6),
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: _isSending
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.send_rounded, size: 18),
+                            SizedBox(width: 8),
+                            Text(
+                              'Kirim Permintaan',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

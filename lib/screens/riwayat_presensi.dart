@@ -91,67 +91,47 @@ class _HistoryScreenState extends State<HistoryScreen> {
               future: _future,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return _buildLoadingState();
                 }
 
                 if (snapshot.hasError) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.wifi_off, size: 64, color: Colors.grey.shade400),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Gagal memuat data.\n${snapshot.error.toString().replaceFirst('Exception: ', '')}',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey.shade600),
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton.icon(
-                            onPressed: _loadData,
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('Coba Lagi'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
+                  return _buildErrorState(snapshot.error.toString());
                 }
 
                 final data = snapshot.data!;
                 final records = (data['presensi'] as List<PresensiRecord>);
-                final ringkasan = data['ringkasan'] as Map<String, dynamic>?;
 
                 if (records.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.event_available, size: 64, color: Colors.grey.shade300),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Tidak ada data kehadiran\ndi ${_months[_selectedMonth - 1]} $_selectedYear',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey.shade500, fontSize: 15),
-                        ),
-                      ],
-                    ),
-                  );
+                  return _buildEmptyState();
                 }
 
                 return ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
                   children: [
-                    // Ringkasan bulanan
-                    if (ringkasan != null) _buildRingkasan(ringkasan),
-                    const SizedBox(height: 16),
-                    // Daftar presensi
+                    // Section label
+                    Padding(
+                      padding: const EdgeInsets.only(left: 2, bottom: 10),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.list_alt, size: 16, color: Color(0xFF1E3A8A)),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Detail Kehadiran (${records.length} hari)',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E3A8A),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     ...records.asMap().entries.map((entry) {
                       return TweenAnimationBuilder<double>(
                         tween: Tween(begin: 0.0, end: 1.0),
-                        duration: Duration(milliseconds: 200 + (entry.key * 40).clamp(0, 400)),
+                        duration: Duration(
+                          milliseconds: 200 + (entry.key * 40).clamp(0, 400),
+                        ),
                         curve: Curves.easeOutCubic,
                         builder: (context, value, child) {
                           return Opacity(
@@ -175,6 +155,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+  // ── Header (TIDAK DIUBAH) ────────────────────────────────
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
@@ -210,229 +191,439 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+  // ── Filter Bar ──────────────────────────────────────────
   Widget _buildFilterBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      color: Colors.white,
-      child: Row(
-        children: [
-          const Icon(Icons.filter_list, color: Color(0xFF1E3A8A), size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<int>(
-                value: _selectedMonth,
-                isExpanded: true,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF222222),
-                  fontWeight: FontWeight.w500,
+      color: const Color(0xFFF4F6FB),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF1E3A8A).withOpacity(0.08),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF1E3A8A), Color(0xFF1565C0)],
                 ),
-                items: List.generate(12, (i) => DropdownMenuItem(
-                  value: i + 1,
-                  child: Text(_months[i]),
-                )),
-                onChanged: (v) {
-                  if (v != null) { setState(() => _selectedMonth = v); _loadData(); }
-                },
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.tune_rounded, color: Colors.white, size: 16),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 3,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F4FF),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFF1E3A8A).withOpacity(0.15)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_month_outlined, size: 13, color: Color(0xFF1E3A8A)),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<int>(
+                          value: _selectedMonth,
+                          isExpanded: true,
+                          isDense: true,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF1E3A8A),
+                            fontWeight: FontWeight.w700,
+                          ),
+                          icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: Color(0xFF1E3A8A)),
+                          items: List.generate(12, (i) => DropdownMenuItem(
+                            value: i + 1,
+                            child: Text(_months[i]),
+                          )),
+                          onChanged: (v) {
+                            if (v != null) { setState(() => _selectedMonth = v); _loadData(); }
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          Container(width: 1, height: 28, color: Colors.grey.shade200),
-          const SizedBox(width: 8),
-          Expanded(
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<int>(
-                value: _selectedYear,
-                isExpanded: true,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF222222),
-                  fontWeight: FontWeight.w500,
-                ),
-                items: _years.map((y) => DropdownMenuItem(
-                  value: y,
-                  child: Text(y.toString()),
-                )).toList(),
-                onChanged: (v) {
-                  if (v != null) { setState(() => _selectedYear = v); _loadData(); }
-                },
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0F4FF),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF1E3A8A).withOpacity(0.15)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.calendar_today_outlined, size: 13, color: Color(0xFF1E3A8A)),
+                  const SizedBox(width: 5),
+                  DropdownButtonHideUnderline(
+                    child: DropdownButton<int>(
+                      value: _selectedYear,
+                      isDense: true,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF1E3A8A),
+                        fontWeight: FontWeight.w700,
+                      ),
+                      icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: Color(0xFF1E3A8A)),
+                      items: _years.map((y) => DropdownMenuItem(
+                        value: y,
+                        child: Text(y.toString()),
+                      )).toList(),
+                      onChanged: (v) {
+                        if (v != null) { setState(() => _selectedYear = v); _loadData(); }
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildRingkasan(Map<String, dynamic> ringkasan) {
-    final hadir = ringkasan['hadir'] as int? ?? 0;
-    final telat = ringkasan['telat'] as int? ?? 0;
-    final alpha = ringkasan['alpha'] as int? ?? 0;
-    final cuti = ringkasan['cuti'] as int? ?? 0;
-    final izin = ringkasan['izin'] as int? ?? 0;
-    final sakit = ringkasan['sakit'] as int? ?? 0;
-
-    return Container(
+  // ── Loading State ───────────────────────────────────────
+  Widget _buildLoadingState() {
+    return ListView(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+      children: List.generate(5, (i) => _buildSkeletonCard(i)),
+    );
+  }
+
+  Widget _buildSkeletonCard(int index) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.3, end: 0.7),
+      duration: Duration(milliseconds: 900 + index * 100),
+      curve: Curves.easeInOut,
+      builder: (context, value, _) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          height: 76,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(value),
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Ringkasan ${_months[_selectedMonth - 1]} $_selectedYear',
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E3A8A),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
             child: Row(
               children: [
-                _buildSummaryChip('Hadir', hadir, const Color(0xFF2E7D32)),
-                const SizedBox(width: 8),
-                _buildSummaryChip('Telat', telat, const Color(0xFFF57C00)),
-                const SizedBox(width: 8),
-                _buildSummaryChip('Cuti', cuti, const Color(0xFF7B1FA2)),
-                const SizedBox(width: 8),
-                _buildSummaryChip('Izin', izin, const Color(0xFF0288D1)),
-                const SizedBox(width: 8),
-                _buildSummaryChip('Sakit', sakit, const Color(0xFF00838F)),
-                const SizedBox(width: 8),
-                _buildSummaryChip('Alpha', alpha, const Color(0xFFE53935)),
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        height: 12,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 10,
+                        width: 120,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  height: 26,
+                  width: 60,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
               ],
             ),
           ),
-        ],
+        );
+      },
+    );
+  }
+
+  // ── Error State ─────────────────────────────────────────
+  Widget _buildErrorState(String error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.07),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.wifi_off_rounded, size: 52, color: Colors.red.shade300),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Gagal Memuat Data',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1A1A2E),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              error.replaceFirst('Exception: ', ''),
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _loadData,
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('Coba Lagi'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E3A8A),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSummaryChip(String label, int count, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.25)),
-      ),
+  // ── Empty State ─────────────────────────────────────────
+  Widget _buildEmptyState() {
+    return Center(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            '$count',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: color,
+          Container(
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E3A8A).withOpacity(0.06),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.event_available_outlined,
+              size: 52,
+              color: Colors.grey.shade400,
             ),
           ),
-          const SizedBox(height: 2),
-          Text(
-            label,
+          const SizedBox(height: 20),
+          const Text(
+            'Belum Ada Data Kehadiran',
             style: TextStyle(
-              fontSize: 11,
-              color: color,
-              fontWeight: FontWeight.w500,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1A1A2E),
             ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Tidak ada record di ${_months[_selectedMonth - 1]} $_selectedYear',
+            style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
           ),
         ],
       ),
     );
   }
 
+
+
+  // ── Record Card ──────────────────────────────────────────
   Widget _buildRecordCard(PresensiRecord record) {
     final statusColor = _statusColor(record);
-    final statusIcon = _statusIcon(record);
+    final statusIcon  = _statusIcon(record);
     final statusLabel = _statusLabel(record);
-    final isAlpha = record.status == 'Alpha';
-    final isLibur = record.status == 'Libur';
-    final isLate = !isAlpha && !isLibur && record.telatMenit > 0;
-    final isNonHadir = ['Cuti', 'Izin', 'Sakit'].contains(record.status);
+    final isAlpha     = record.status == 'Alpha' || record.status == 'Alpa';
+    final isLibur     = record.status == 'Libur';
+    final isLate      = !isAlpha && !isLibur && record.telatMenit > 0;
+    final isHadir     = !isAlpha && !isLibur &&
+                        !['Cuti', 'Izin', 'Sakit', 'Terjadwal'].contains(record.status);
+    final isNonHadir  = ['Cuti', 'Izin', 'Sakit'].contains(record.status);
+    final isTerjadwal = record.status == 'Terjadwal';
+
+    final parsedDate  = DateTime.parse(record.tanggal);
+    final dayName     = DateFormat('EEEE', 'id').format(parsedDate);
+    final dayNum      = DateFormat('dd', 'id').format(parsedDate);
+    final monthYear   = DateFormat('MMM yyyy', 'id').format(parsedDate);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: isLibur ? const Color(0xFFF5F5F5) : Colors.white,
+        color: isLibur ? const Color(0xFFF8F8F8) : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isAlpha
-              ? const Color(0xFFE53935).withValues(alpha: 0.3)
-              : isLate
-                  ? const Color(0xFFF57C00).withValues(alpha: 0.2)
-                  : Colors.transparent,
+        border: Border(
+          left: BorderSide(
+            color: isLibur ? Colors.transparent : statusColor,
+            width: 3.5,
+          ),
         ),
         boxShadow: isLibur
             ? []
             : [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 6,
+                  blurRadius: 7,
                   offset: const Offset(0, 2),
                 ),
               ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Status icon
+            // Date block
             Container(
-              width: 44,
-              height: 44,
+              width: 46,
+              padding: const EdgeInsets.symmetric(vertical: 6),
               decoration: BoxDecoration(
-                color: statusColor.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+                color: isLibur
+                    ? Colors.grey.shade200
+                    : statusColor.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(statusIcon, color: statusColor, size: 22),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    dayNum,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isLibur ? Colors.grey.shade500 : statusColor,
+                      height: 1.1,
+                    ),
+                  ),
+                  Text(
+                    monthYear,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 9,
+                      color: isLibur ? Colors.grey.shade400 : statusColor.withOpacity(0.8),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(width: 12),
 
-            // Info tengah
+            // Middle info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Tanggal
                   Text(
-                    DateFormat('EEEE, dd MMM yyyy', 'id')
-                        .format(DateTime.parse(record.tanggal)),
+                    dayName,
                     style: TextStyle(
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                       fontSize: 14,
-                      color: isLibur ? Colors.grey.shade500 : const Color(0xFF1A1A2E),
+                      color: isLibur
+                          ? Colors.grey.shade500
+                          : const Color(0xFF1A1A2E),
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 5),
 
-                  if (isAlpha)
-                    Text(
-                      'Tidak hadir • Tanpa keterangan',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                  if (isLibur)
+                    Row(
+                      children: [
+                        const Icon(Icons.beach_access, size: 13, color: Colors.grey),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Hari libur',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade400,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
                     )
-                  else if (isLibur)
-                    Text(
-                      'Hari libur sesuai jadwal shift',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade400, fontStyle: FontStyle.italic),
+                  else if (isAlpha)
+                    Row(
+                      children: [
+                        Icon(Icons.warning_amber_rounded, size: 13, color: Colors.red.shade400),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Tidak hadir • Tanpa keterangan',
+                          style: TextStyle(fontSize: 12, color: Colors.red.shade400),
+                        ),
+                      ],
+                    )
+                  else if (isTerjadwal)
+                    Row(
+                      children: [
+                        Icon(Icons.event_note, size: 13, color: Colors.blue.shade400),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Belum absen',
+                          style: TextStyle(fontSize: 12, color: Colors.blue.shade400),
+                        ),
+                      ],
                     )
                   else if (isNonHadir)
-                    Text(
-                      record.keterangan ?? record.status,
-                      style: TextStyle(fontSize: 12, color: statusColor),
+                    Row(
+                      children: [
+                        Icon(statusIcon, size: 13, color: statusColor),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            record.keterangan ?? statusLabel,
+                            style: TextStyle(fontSize: 12, color: statusColor),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     )
-                  else
+                  else if (isHadir)
                     Row(
                       children: [
                         _buildTimeChip(
@@ -443,51 +634,71 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           const Color(0xFF1E3A8A),
                         ),
                         const SizedBox(width: 8),
+                        const Icon(Icons.arrow_forward, size: 12, color: Colors.grey),
+                        const SizedBox(width: 8),
                         _buildTimeChip(
                           Icons.logout,
                           record.jamKeluar != null
                               ? record.jamKeluar!.substring(0, 5)
                               : '--:--',
-                          Colors.grey,
+                          record.jamKeluar != null ? Colors.grey.shade600 : Colors.grey.shade400,
                         ),
                       ],
                     ),
 
                   if (isLate && record.keterangan != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      record.keterangan!,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFFF57C00),
-                        fontStyle: FontStyle.italic,
-                      ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        Icon(Icons.timer_outlined, size: 11, color: Colors.orange.shade600),
+                        const SizedBox(width: 3),
+                        Text(
+                          record.keterangan!,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.orange.shade600,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ],
               ),
             ),
 
+            const SizedBox(width: 8),
+
             // Status badge
             if (!isLibur)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-                ),
-                child: Text(
-                  statusLabel,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: statusColor,
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(statusIcon, size: 11, color: statusColor),
+                        const SizedBox(width: 4),
+                        Text(
+                          statusLabel,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: statusColor,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              )
-            else
-              Icon(Icons.beach_access, color: Colors.grey.shade400, size: 20),
+                ],
+              ),
           ],
         ),
       ),
@@ -495,20 +706,27 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildTimeChip(IconData icon, String time, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 13, color: color),
-        const SizedBox(width: 3),
-        Text(
-          time,
-          style: TextStyle(
-            fontSize: 12,
-            color: color,
-            fontWeight: FontWeight.w600,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: color),
+          const SizedBox(width: 3),
+          Text(
+            time,
+            style: TextStyle(
+              fontSize: 12,
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

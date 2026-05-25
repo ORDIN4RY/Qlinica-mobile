@@ -274,61 +274,116 @@ class _LeaveScreenState extends State<LeaveScreen> {
 
   Widget _buildFilterBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      color: Colors.white,
-      child: Row(
-        children: [
-          const Icon(Icons.filter_list, color: Color(0xFF1E3A8A), size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<int>(
-                value: _selectedMonth,
-                isExpanded: true,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF222222),
-                  fontWeight: FontWeight.w500,
+      color: const Color(0xFFF4F6FB),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF1E3A8A).withOpacity(0.08),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF1E3A8A), Color(0xFF1565C0)],
                 ),
-                items: List.generate(12, (i) => DropdownMenuItem(
-                  value: i + 1,
-                  child: Text(_months[i]),
-                )),
-                onChanged: (v) {
-                  if (v != null) {
-                    setState(() => _selectedMonth = v);
-                    _loadData();
-                  }
-                },
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.tune_rounded, color: Colors.white, size: 16),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 3,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F4FF),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFF1E3A8A).withOpacity(0.15)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_month_outlined, size: 13, color: Color(0xFF1E3A8A)),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<int>(
+                          value: _selectedMonth,
+                          isExpanded: true,
+                          isDense: true,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF1E3A8A),
+                            fontWeight: FontWeight.w700,
+                          ),
+                          icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: Color(0xFF1E3A8A)),
+                          items: List.generate(12, (i) => DropdownMenuItem(
+                            value: i + 1,
+                            child: Text(_months[i]),
+                          )),
+                          onChanged: (v) {
+                            if (v != null) {
+                              setState(() => _selectedMonth = v);
+                              _loadData();
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          Container(width: 1, height: 28, color: Colors.grey.shade200),
-          const SizedBox(width: 8),
-          Expanded(
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<int>(
-                value: _selectedYear,
-                isExpanded: true,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF222222),
-                  fontWeight: FontWeight.w500,
-                ),
-                items: _years.map((y) => DropdownMenuItem(
-                  value: y,
-                  child: Text(y.toString()),
-                )).toList(),
-                onChanged: (v) {
-                  if (v != null) {
-                    setState(() => _selectedYear = v);
-                    _loadData();
-                  }
-                },
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0F4FF),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF1E3A8A).withOpacity(0.15)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.calendar_today_outlined, size: 13, color: Color(0xFF1E3A8A)),
+                  const SizedBox(width: 5),
+                  DropdownButtonHideUnderline(
+                    child: DropdownButton<int>(
+                      value: _selectedYear,
+                      isDense: true,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF1E3A8A),
+                        fontWeight: FontWeight.w700,
+                      ),
+                      icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: Color(0xFF1E3A8A)),
+                      items: _years.map((y) => DropdownMenuItem(
+                        value: y,
+                        child: Text(y.toString()),
+                      )).toList(),
+                      onChanged: (v) {
+                        if (v != null) {
+                          setState(() => _selectedYear = v);
+                          _loadData();
+                        }
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

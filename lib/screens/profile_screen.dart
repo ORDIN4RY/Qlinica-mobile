@@ -186,7 +186,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final email = _user?.email ?? '-';
     final jabatan = _user?.pegawai?['jabatan'] as String? ?? '-';
     final nik = _user?.pegawai?['nik'] as String? ?? '-';
-    
+
     final initials = name
         .split(' ')
         .take(2)
@@ -196,223 +196,201 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return SingleChildScrollView(
       child: Column(
         children: [
-          // ── Header ──────────────────────────────────────────
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 60, 20, 32),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF1E3A8A), Color(0xFF1565C0)],
-              ),
-            ),
-            child: Column(
-              children: [
-                // Avatar
-                Container(
-                  width: 90,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 3),
-                  ),
-                  child: Center(
-                    child: Text(
-                      initials,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    jabatan,
-                    style: const TextStyle(color: Colors.white, fontSize: 13),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // ── Premium Header ────────────────────────────────────
+          _buildProfileHeader(name, jabatan, initials),
 
-          // ── Info Cards ────────────────────────────────────────
+          // ── Body ─────────────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Informasi Pegawai',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E3A8A),
-                      ),
-                    ),
-                    if (!_isEditing)
-                      TextButton.icon(
-                        onPressed: () => setState(() => _isEditing = true),
-                        icon: const Icon(Icons.edit_note, size: 18),
-                        label: const Text('Edit'),
+                // Section label
+                _buildSectionLabel('Informasi Pegawai', Icons.person_pin_outlined, actions: [
+                  if (!_isEditing)
+                    _buildHeaderAction(
+                      label: 'Edit',
+                      icon: Icons.edit_rounded,
+                      onTap: () => setState(() => _isEditing = true),
+                    )
+                  else
+                    Row(children: [
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _isEditing = false;
+                            if (_user != null) {
+                              _nameCtrl.text = _user!.pegawai?['nama'] as String? ?? _user!.name;
+                              _phoneCtrl.text = _user!.pegawai?['no_hp'] as String? ?? '';
+                              _addressCtrl.text = _user!.pegawai?['alamat'] as String? ?? '';
+                            }
+                          });
+                        },
                         style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFF1E3A8A),
+                          foregroundColor: Colors.grey.shade500,
                           visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
                         ),
-                      )
-                    else
-                      Row(
-                        children: [
-                          TextButton(
-                            onPressed: () {
-                              setState(() {
-                                _isEditing = false;
-                                // Reset values
-                                if (_user != null) {
-                                  _nameCtrl.text = _user!.pegawai?['nama'] as String? ?? _user!.name;
-                                  _phoneCtrl.text = _user!.pegawai?['no_hp'] as String? ?? '';
-                                  _addressCtrl.text = _user!.pegawai?['alamat'] as String? ?? '';
-                                }
-                              });
-                            },
-                            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
-                          ),
-                          const SizedBox(width: 4),
-                          ElevatedButton(
-                            onPressed: _isSavingProfile ? null : _onSaveProfile,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1E3A8A),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              minimumSize: const Size(0, 32),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                            child: _isSavingProfile
-                                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                : const Text('Simpan', style: TextStyle(fontSize: 12)),
-                          ),
-                        ],
+                        child: const Text('Batal', style: TextStyle(fontSize: 13)),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                
-                _buildInfoCard([
-                  _buildReadOnlyRow(Icons.badge_outlined, 'NIK', nik),
-                  const Divider(height: 1, indent: 45),
-                  _buildReadOnlyRow(Icons.email_outlined, 'Email', email),
-                  const Divider(height: 1, indent: 45),
-                  _buildReadOnlyRow(Icons.work_outline, 'Jabatan', jabatan),
-                  const Divider(height: 1, indent: 45),
-                  
-                  Form(
-                    key: _profileFormKey,
-                    child: Column(
-                      children: [
-                        _buildEditableRow(
-                          icon: Icons.person_outline,
-                          label: 'Nama',
-                          controller: _nameCtrl,
-                          isEditing: _isEditing,
-                          validator: (v) => (v == null || v.isEmpty) ? 'Wajib diisi' : null,
+                      const SizedBox(width: 4),
+                      GestureDetector(
+                        onTap: _isSavingProfile ? null : _onSaveProfile,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF1E3A8A), Color(0xFF1565C0)],
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: _isSavingProfile
+                              ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                              : const Text('Simpan', style: TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold)),
                         ),
-                        const Divider(height: 1, indent: 45),
-                        _buildEditableRow(
-                          icon: Icons.phone_outlined,
-                          label: 'No. HP',
-                          controller: _phoneCtrl,
-                          isEditing: _isEditing,
-                          keyboardType: TextInputType.phone,
-                        ),
-                        const Divider(height: 1, indent: 45),
-                        _buildEditableRow(
-                          icon: Icons.location_on_outlined,
-                          label: 'Alamat',
-                          controller: _addressCtrl,
-                          isEditing: _isEditing,
-                          maxLines: 2,
-                        ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    ]),
                 ]),
+                const SizedBox(height: 12),
 
-                const SizedBox(height: 24),
+                // Info card
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF1E3A8A).withOpacity(0.07),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      _buildInfoRow(Icons.badge_outlined, 'NIK', nik, const Color(0xFF1565C0), isFirst: true),
+                      _buildDivider(),
+                      _buildInfoRow(Icons.email_outlined, 'Email', email, const Color(0xFF0288D1)),
+                      _buildDivider(),
+                      _buildInfoRow(Icons.work_outline, 'Jabatan', jabatan, const Color(0xFF7B1FA2)),
+                      _buildDivider(),
+                      Form(
+                        key: _profileFormKey,
+                        child: Column(
+                          children: [
+                            _buildEditableRow(
+                              icon: Icons.person_outline,
+                              label: 'Nama',
+                              iconColor: const Color(0xFF1E3A8A),
+                              controller: _nameCtrl,
+                              isEditing: _isEditing,
+                              validator: (v) => (v == null || v.isEmpty) ? 'Wajib diisi' : null,
+                            ),
+                            _buildDivider(),
+                            _buildEditableRow(
+                              icon: Icons.phone_outlined,
+                              label: 'No. HP',
+                              iconColor: const Color(0xFF2E7D32),
+                              controller: _phoneCtrl,
+                              isEditing: _isEditing,
+                              keyboardType: TextInputType.phone,
+                            ),
+                            _buildDivider(),
+                            _buildEditableRow(
+                              icon: Icons.location_on_outlined,
+                              label: 'Alamat',
+                              iconColor: const Color(0xFFE53935),
+                              controller: _addressCtrl,
+                              isEditing: _isEditing,
+                              maxLines: 2,
+                              isLast: true,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
-                // ── Ganti Password ────────────────────────────────
-                InkWell(
+                const SizedBox(height: 28),
+
+                // ── Ganti Password ─────────────────────────────
+                _buildSectionLabel('Keamanan Akun', Icons.security_outlined),
+                const SizedBox(height: 12),
+
+                GestureDetector(
                   onTap: () => setState(() => _showChangePass = !_showChangePass),
-                  borderRadius: BorderRadius.circular(12),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: _showChangePass
                             ? const Color(0xFF1E3A8A)
-                            : const Color(0xFFE0E4EC),
+                            : Colors.transparent,
+                        width: 1.5,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+                          color: const Color(0xFF1E3A8A).withOpacity(0.07),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(8),
+                          width: 42,
+                          height: 42,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                            gradient: LinearGradient(
+                              colors: _showChangePass
+                                  ? [const Color(0xFF1E3A8A), const Color(0xFF1565C0)]
+                                  : [const Color(0xFFF0F4FF), const Color(0xFFE0E9FF)],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.lock_outline_rounded,
+                            size: 20,
+                            color: _showChangePass ? Colors.white : const Color(0xFF1E3A8A),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Ganti Password',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF1A1A2E),
+                                ),
+                              ),
+                              Text(
+                                'Ubah kata sandi akun Anda',
+                                style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0F4FF),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(
-                            Icons.lock_outline,
-                            color: Color(0xFF1E3A8A),
-                            size: 20,
+                          child: Icon(
+                            _showChangePass
+                                ? Icons.keyboard_arrow_up_rounded
+                                : Icons.keyboard_arrow_right_rounded,
+                            size: 18,
+                            color: const Color(0xFF1E3A8A),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Text(
-                            'Ganti Password',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF1E3A8A),
-                            ),
-                          ),
-                        ),
-                        Icon(
-                          _showChangePass
-                              ? Icons.keyboard_arrow_up
-                              : Icons.keyboard_arrow_down,
-                          color: const Color(0xFF1E3A8A),
                         ),
                       ],
                     ),
@@ -420,29 +398,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
 
                 if (_showChangePass) ...[
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   _buildChangePasswordForm(),
                 ],
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 28),
 
-                // ── Logout Button ─────────────────────────────────
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: OutlinedButton.icon(
-                    onPressed: _onLogout,
-                    icon: const Icon(Icons.logout_rounded),
-                    label: const Text(
-                      'Keluar dari Akun',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                // ── Logout Button ────────────────────────────
+                GestureDetector(
+                  onTap: _onLogout,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.red.shade200),
                     ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      side: const BorderSide(color: Colors.red),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.logout_rounded, color: Colors.red.shade600, size: 20),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Keluar dari Akun',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red.shade600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -455,108 +441,274 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildInfoCard(List<Widget> rows) {
+  // ── Premium Profile Header ──────────────────────────────
+  Widget _buildProfileHeader(String name, String jabatan, String initials) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF0D2461), Color(0xFF1E3A8A), Color(0xFF1565C0)],
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
       ),
-      child: Column(children: rows),
-    );
-  }
-
-  Widget _buildReadOnlyRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
+      child: Column(
         children: [
-          Icon(icon, size: 18, color: const Color(0xFF1E3A8A)),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 70,
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF888888)),
-            ),
+          const SizedBox(height: 48),
+          // Avatar with rings
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              // Outer glow ring
+              Container(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.1),
+                ),
+              ),
+              // Middle ring
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.transparent,
+                  border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
+                ),
+              ),
+              // Avatar
+              Container(
+                width: 68,
+                height: 68,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.white.withOpacity(0.35),
+                      Colors.white.withOpacity(0.15),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                child: Center(
+                  child: Text(
+                    initials,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          Expanded(
+          const SizedBox(height: 12),
+          Text(
+            name,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 19,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.3,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.18),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withOpacity(0.3)),
+            ),
             child: Text(
-              value,
+              jabatan,
               style: const TextStyle(
-                fontSize: 14,
+                color: Colors.white,
+                fontSize: 12.5,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFFBBBBBB), // Muted for read-only
               ),
             ),
           ),
+          const SizedBox(height: 20),
         ],
       ),
     );
   }
+
+
+  Widget _buildSectionLabel(String title, IconData icon, {List<Widget>? actions}) {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 20,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF1E3A8A), Color(0xFF1565C0)],
+            ),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Icon(icon, size: 16, color: const Color(0xFF1E3A8A)),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1A1A2E),
+            ),
+          ),
+        ),
+        if (actions != null) ...actions,
+      ],
+    );
+  }
+
+  Widget _buildHeaderAction({required String label, required IconData icon, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0F4FF),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFF1E3A8A).withOpacity(0.2)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 13, color: const Color(0xFF1E3A8A)),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF1E3A8A),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value, Color color, {bool isFirst = false}) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, isFirst ? 16 : 12, 16, 12),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 17, color: color),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFFBBBBBB),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Divider(height: 1, thickness: 1, color: Colors.grey.shade100, indent: 64);
+  }
+
+  // _buildInfoCard and _buildReadOnlyRow are replaced by _buildInfoRow and _buildDivider above
 
   Widget _buildEditableRow({
     required IconData icon,
     required String label,
     required TextEditingController controller,
     required bool isEditing,
+    Color iconColor = const Color(0xFF1E3A8A),
     String? Function(String?)? validator,
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
+    bool isLast = false,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.fromLTRB(16, 12, 16, isLast ? 16 : 12),
       child: Row(
         crossAxisAlignment: maxLines > 1 ? CrossAxisAlignment.start : CrossAxisAlignment.center,
         children: [
           Padding(
-            padding: EdgeInsets.only(top: maxLines > 1 ? 12 : 0),
-            child: Icon(icon, size: 18, color: const Color(0xFF1E3A8A)),
-          ),
-          const SizedBox(width: 12),
-          Padding(
-            padding: EdgeInsets.only(top: maxLines > 1 ? 14 : 0),
-            child: SizedBox(
-              width: 70,
-              child: Text(
-                label,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF888888)),
+            padding: EdgeInsets.only(top: maxLines > 1 ? 2 : 0),
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
               ),
+              child: Icon(icon, size: 17, color: iconColor),
             ),
           ),
+          const SizedBox(width: 12),
           Expanded(
-            child: isEditing
-                ? TextFormField(
-                    controller: controller,
-                    validator: validator,
-                    keyboardType: keyboardType,
-                    maxLines: maxLines,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                      border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade300)),
-                      enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade300)),
-                      focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF1E3A8A))),
-                    ),
-                  )
-                : Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Text(
-                      controller.text.isEmpty ? '-' : controller.text,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF222222),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                const SizedBox(height: 2),
+                isEditing
+                    ? TextFormField(
+                        controller: controller,
+                        validator: validator,
+                        keyboardType: keyboardType,
+                        maxLines: maxLines,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 6),
+                          border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade200)),
+                          enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade200)),
+                          focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: iconColor, width: 1.5)),
+                        ),
+                      )
+                    : Text(
+                        controller.text.isEmpty ? '-' : controller.text,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF222222),
+                        ),
                       ),
-                    ),
-                  ),
+              ],
+            ),
           ),
         ],
       ),
