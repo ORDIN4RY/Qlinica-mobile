@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'fcm_service.dart';
+import 'notification_service.dart';
 
 /// Ganti dengan IP komputer Anda (yang menjalankan Laravel).
 /// Cara cek IP: jalankan `ipconfig` di CMD, cari IPv4 Address.
 /// Jangan pakai 'localhost' atau '127.0.0.1' dari HP fisik!
-const String kBaseUrl = 'http://192.168.1.2:8080/api/mobile';
+const String kBaseUrl = 'http://192.168.1.9:8080/api/mobile';
 
 /// ───────────────────────────────────────────c──────
 /// Model sederhana untuk User & PresensiRecord
@@ -288,6 +290,14 @@ class ApiService {
     } catch (e) {
       // Ignore error if network fails during logout
     } finally {
+      // Wajib bersihkan token FCM & notifikasi lokal saat logout agar tidak bocor ke user berikutnya
+      try {
+        await FcmService.instance.deleteToken();
+      } catch (_) {}
+      try {
+        await NotificationService.instance.batalkanSemua();
+      } catch (_) {}
+
       await clearToken();
     }
   }
@@ -495,6 +505,28 @@ class ApiService {
     throw Exception(data['message'] ?? 'Gagal melakukan absen pulang.');
   }
 
+  /// ── Presensi: Laporkan Alpa ───────────────────
+  /// Dipanggil dari mobile saat jam pulang shift berlalu dan pegawai
+  /// tidak pernah clock in. Backend yang memvalidasi dan menyimpan ke DB.
+  /// Return true jika berhasil dicatat, false jika sudah ada record / bukan jadwal kerja.
+  Future<bool> laporAlpa() async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http
+          .post(
+            Uri.parse('$kBaseUrl/presensi/alpa'),
+            headers: headers,
+          )
+          .timeout(const Duration(seconds: 7));
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      return response.statusCode == 200 && data['success'] == true;
+    } catch (_) {
+      // Jika offline atau gagal, abaikan — backend juga punya cron job sendiri
+      return false;
+    }
+  }
+
   /// ── Cuti: Daftar pengajuan ────────────────────
 
   Future<List<CutiRecord>> getCutiList({int? bulan, int? tahun}) async {
@@ -599,10 +631,88 @@ class ApiService {
     final response = await http.Response.fromStream(streamedResponse);
     final data = jsonDecode(response.body) as Map<String, dynamic>;
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
+    if ((response.statusCode == 200 || response.statusCode == 201) && data['success'] == true) {
       return data;
     }
 
     throw Exception(data['message'] ?? 'Gagal mengirim pengajuan.');
+  }
+
+  /// ── Auth: Lupa Password (Kirim OTP) ───────────
+
+  Future<void> forgotPassword(String email) async {
+    final response = await http.post(
+      Uri.parse('$kBaseUrl/forgot-password'),
+      headers: _publicHeaders,
+      body: jsonEncode({'email': email}),
+    );
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+    if (response.statusCode != 200 || data['success'] != true) {
+      throw Exception(data['message'] ?? 'Gagal memproses permintaan lupa password.');
+    }
+  }
+
+  /// ── Auth: Verifikasi OTP ────────────────────────
+
+  Future<void> verifyOtp(String email, String otp) async {
+    final response = await http.post(
+      Uri.parse('$kBaseUrl/verify-otp'),
+      headers: _publicHeaders,
+      body: jsonEncode({
+        'email': email,
+        'otp': otp,
+        'token': otp, // Mengirim otp & token agar aman untuk standar Laravel
+      }),
+    );
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+    if (response.statusCode != 200 || data['success'] != true) {
+      throw Exception(data['message'] ?? 'Kode OTP tidak valid atau kadaluarsa.');
+    }
+  }
+
+  /// ── Auth: Reset Password (Verifikasi OTP) ─────
+
+  Future<void> resetPassword(String email, String otp, String newPassword) async {
+    final response = await http.post(
+      Uri.parse('$kBaseUrl/reset-password'),
+      headers: _publicHeaders,
+      body: jsonEncode({
+        'email': email,
+        'otp': otp,
+        'token': otp,
+        'password': newPassword,
+        'password_confirmation': newPassword,
+      }),
+    );
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+    if (response.statusCode != 200 || data['success'] != true) {
+      throw Exception(data['message'] ?? 'Gagal melakukan reset password.');
+    }
+  }
+
+  /// ── Auth: Update FCM Token ────────────────────
+  
+  Future<bool> updateFcmToken(String fcmToken) async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http
+          .post(
+            Uri.parse('$kBaseUrl/update-fcm-token'),
+            headers: headers,
+            body: jsonEncode({'fcm_token': fcmToken}),
+          )
+          .timeout(const Duration(seconds: 7));
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      return response.statusCode == 200 && data['success'] == true;
+    } catch (_) {
+      return false;
+    }
   }
 }

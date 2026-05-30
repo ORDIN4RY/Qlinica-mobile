@@ -34,10 +34,15 @@ class _form_pengajuanState extends State<form_pengajuan> {
   Map<String, dynamic>? _quota;
   bool _isLoadingQuota = false;
 
+  // Existing leaves state
+  List<CutiRecord> _existingLeaves = [];
+  bool _isLoadingLeaves = false;
+
   @override
   void initState() {
     super.initState();
     _fetchQuota();
+    _fetchExistingLeaves();
   }
 
   Future<void> _fetchQuota() async {
@@ -50,6 +55,69 @@ class _form_pengajuanState extends State<form_pengajuan> {
     } finally {
       setState(() => _isLoadingQuota = false);
     }
+  }
+
+  Future<void> _fetchExistingLeaves() async {
+    setState(() => _isLoadingLeaves = true);
+    try {
+      final now = DateTime.now();
+      final currentMonth = now.month;
+      final currentYear = now.year;
+
+      final currentList = await ApiService.instance.getCutiList(bulan: currentMonth, tahun: currentYear);
+
+      final next = now.add(const Duration(days: 30));
+      final nextList = await ApiService.instance.getCutiList(bulan: next.month, tahun: next.year);
+
+      final prev = now.subtract(const Duration(days: 30));
+      final prevList = await ApiService.instance.getCutiList(bulan: prev.month, tahun: prev.year);
+
+      final all = [...currentList, ...nextList, ...prevList];
+      final Map<String, CutiRecord> unique = {};
+      for (var item in all) {
+        if (item.batchId != null) {
+          unique[item.batchId!] = item;
+        }
+      }
+
+      setState(() {
+        _existingLeaves = unique.values
+            .where((c) => c.approvalStatus.toLowerCase() == 'pending' || c.approvalStatus.toLowerCase() == 'approved')
+            .toList();
+      });
+    } catch (e) {
+      debugPrint('Error fetching existing leaves: $e');
+    } finally {
+      setState(() => _isLoadingLeaves = false);
+    }
+  }
+
+  bool _isDayBooked(DateTime day) {
+    final checkDate = DateTime(day.year, day.month, day.day);
+
+    for (final cuti in _existingLeaves) {
+      try {
+        final start = DateTime.parse(cuti.tanggalMulai);
+        final end = DateTime.parse(cuti.tanggalSelesai);
+
+        final startDate = DateTime(start.year, start.month, start.day);
+        final endDate = DateTime(end.year, end.month, end.day);
+
+        if ((checkDate.isAtSameMomentAs(startDate) || checkDate.isAfter(startDate)) &&
+            (checkDate.isAtSameMomentAs(endDate) || checkDate.isBefore(endDate))) {
+          return true;
+        }
+      } catch (_) {}
+    }
+    return false;
+  }
+
+  DateTime _findFirstAvailableDate(DateTime startSearch) {
+    var candidate = DateTime(startSearch.year, startSearch.month, startSearch.day);
+    while (_isDayBooked(candidate)) {
+      candidate = candidate.add(const Duration(days: 1));
+    }
+    return candidate;
   }
 
   Future<void> _pickImage() async {
@@ -71,19 +139,28 @@ class _form_pengajuanState extends State<form_pengajuan> {
 
     if (isStart) {
       first = today;
-      initial = _startDate ?? today;
-      if (initial.isBefore(first)) initial = first;
+      final firstAvailable = _findFirstAvailableDate(today);
+      initial = _startDate ?? firstAvailable;
+      if (initial.isBefore(firstAvailable)) initial = firstAvailable;
     } else {
       first = _startDate ?? today;
-      initial = _endDate ?? first;
-      if (initial.isBefore(first)) initial = first;
+      final firstAvailable = _findFirstAvailableDate(first);
+      initial = _endDate ?? firstAvailable;
+      if (initial.isBefore(firstAvailable)) initial = firstAvailable;
     }
+
+    // Pastikan initialDate memuaskan predicate (tidak dibooking)
+    initial = _findFirstAvailableDate(initial);
 
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initial,
       firstDate: first,
       lastDate: DateTime(2101),
+      selectableDayPredicate: (day) {
+        // Hari yang sudah ada pengajuan (Pending / Approved) tidak bisa dipilih
+        return !_isDayBooked(day);
+      },
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -131,6 +208,22 @@ class _form_pengajuanState extends State<form_pengajuan> {
       return;
     }
 
+    // Validasi overlap dengan cuti yang sudah ada (Pending atau Approved)
+    DateTime check = _startDate!;
+    while (check.isBefore(_endDate!) || check.isAtSameMomentAs(_endDate!)) {
+      if (_isDayBooked(check)) {
+        final formattedDate = DateFormat('dd MMM yyyy', 'id').format(check);
+        Get.snackbar(
+          'Peringatan',
+          'Tanggal $formattedDate sudah memiliki pengajuan aktif (Pending/Approved).',
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+        );
+        return;
+      }
+      check = check.add(const Duration(days: 1));
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -145,9 +238,7 @@ class _form_pengajuanState extends State<form_pengajuan> {
       if (!mounted) return;
 
       String pesan = result['message'] as String? ?? 'Pengajuan berhasil dikirim.';
-      Get.back(result: true);
-      Get.snackbar('Berhasil', pesan,
-          backgroundColor: Colors.green, colorText: Colors.white);
+      Get.back(result: pesan);
     } catch (e) {
       if (!mounted) return;
       Get.snackbar(

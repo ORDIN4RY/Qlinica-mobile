@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import '../services/api_service.dart';
+import '../services/fcm_service.dart';
 import 'main_navigation.dart';
 import 'package:get/get.dart';
+import 'reset_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -95,6 +97,8 @@ class _LoginScreenState extends State<LoginScreen>
     if (!mounted) return;
 
     if (authenticated) {
+      // Daftarkan FCM Token perangkat ke server Laravel
+      FcmService.instance.getAndSendToken();
       Get.offAll(() => const MainNavigation());
     } else {
       setState(() => _isLoading = false);
@@ -134,6 +138,9 @@ class _LoginScreenState extends State<LoginScreen>
       }
 
       if (!mounted) return;
+
+      // Daftarkan FCM Token perangkat ke server Laravel
+      FcmService.instance.getAndSendToken();
 
       // Navigasi ke halaman utama, hapus semua route sebelumnya
       Get.offAll(() => const MainNavigation());
@@ -633,14 +640,29 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSending = true);
 
-    // Simulasi request / nanti bisa diganti ke endpoint API nyata
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (!mounted) return;
-    setState(() {
-      _isSending = false;
-      _sent = true;
-    });
+    try {
+      await ApiService.instance.forgotPassword(_emailCtrl.text.trim());
+      
+      if (!mounted) return;
+      
+      // Tutup bottom sheet
+      Navigator.pop(context);
+      
+      // Buka halaman reset password
+      Get.to(() => ResetPasswordScreen(email: _emailCtrl.text.trim()));
+      
+    } catch (e) {
+      if (!mounted) return;
+      
+      Get.snackbar(
+        'Gagal',
+        e.toString().replaceFirst('Exception: ', ''),
+        backgroundColor: const Color(0xFFE53935),
+        colorText: Colors.white,
+      );
+    } finally {
+      if (mounted) setState(() => _isSending = false);
+    }
   }
 
   @override

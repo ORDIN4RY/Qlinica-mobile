@@ -2,15 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:get/get.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'screens/main_navigation.dart';
 import 'screens/login_screen.dart';
 import 'services/api_service.dart';
+import 'services/notification_service.dart';
+import 'services/fcm_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Inisialisasi locale 'id' agar DateFormat bisa format nama hari/bulan bahasa Indonesia
   await initializeDateFormatting('id', null);
+
+  // Inisialisasi Firebase & FCM (dilindungi try-catch jika google-services.json belum ada)
+  try {
+    await Firebase.initializeApp();
+    await FcmService.instance.init();
+  } catch (e) {
+    debugPrint("Firebase/FCM failed to initialize: $e. Make sure google-services.json is present.");
+  }
+
+  // Inisialisasi layanan notifikasi lokal
+  await NotificationService.instance.init();
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(

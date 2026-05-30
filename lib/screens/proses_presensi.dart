@@ -6,7 +6,9 @@ import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 import 'package:get/get.dart';
+import '../controllers/presensi_controller.dart';
 
 class AttendanceProcessScreen extends StatefulWidget {
   final bool isClockIn;
@@ -27,8 +29,8 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
   late Timer _timer;
   DateTime _currentTime = DateTime.now();
 
-  final double officeLat = -8.159804;
-  final double officeLng = 113.723183;
+  final double officeLat = -8.308916;
+  final double officeLng = 113.425736;
   final double radiusInMeters = 100;
 
   Position? _currentPosition;
@@ -223,6 +225,18 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
           isLocationValid: isLocationValid,
         );
 
+        // Batalkan semua notifikasi alpa karena sudah berhasil clock in
+        await NotificationService.instance.batalkanNotifikasiAlpa();
+
+        // Perbarui status presensi di controller secara reaktif agar dashboard berubah instan
+        if (Get.isRegistered<PresensiController>()) {
+          Get.find<PresensiController>().setStatusPresensi(
+            masuk: true,
+            pulang: false,
+          );
+          Get.find<PresensiController>().loadTodayStatus(); // background sync
+        }
+
         final isLate = result.telatMenit > 0;
         final msg = isLate
             ? 'Absen Masuk Berhasil! (Telat ${result.telatMenit} menit)'
@@ -242,6 +256,15 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
           longitude: _currentPosition!.longitude,
           isLocationValid: isLocationValid,
         );
+
+        // Perbarui status presensi di controller secara reaktif agar dashboard berubah instan
+        if (Get.isRegistered<PresensiController>()) {
+          Get.find<PresensiController>().setStatusPresensi(
+            masuk: true,
+            pulang: true,
+          );
+          Get.find<PresensiController>().loadTodayStatus(); // background sync
+        }
 
         if (mounted) Get.back(result: true);
         Get.snackbar(
@@ -601,13 +624,6 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
               children: [
                 const Icon(Icons.gps_fixed, size: 14, color: Colors.grey),
                 const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    'GPS: ${_currentPosition?.latitude.toStringAsFixed(6) ?? '-'}, ${_currentPosition?.longitude.toStringAsFixed(6) ?? '-'}',
-                    style: const TextStyle(color: Colors.grey, fontSize: 11),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
                 const SizedBox(width: 12),
                 const Icon(Icons.radar, size: 14, color: Colors.grey),
                 const SizedBox(width: 4),

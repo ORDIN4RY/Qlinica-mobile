@@ -222,8 +222,22 @@ class _LeaveScreenState extends State<LeaveScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          final shouldRefresh = await Get.to<bool>(() => const form_pengajuan());
-          if (shouldRefresh == true) _loadData();
+          final result = await Get.to<dynamic>(() => const form_pengajuan());
+          if (result != null) {
+            _loadData();
+            String msg = 'Pengajuan berhasil dikirim.';
+            if (result is String) {
+              msg = result;
+            }
+            Get.snackbar(
+              'Berhasil',
+              msg,
+              backgroundColor: Colors.green,
+              colorText: Colors.white,
+              snackPosition: SnackPosition.TOP,
+              duration: const Duration(seconds: 3),
+            );
+          }
         },
         backgroundColor: const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,

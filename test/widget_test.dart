@@ -7,7 +7,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:sahaduta_mobile/main.dart';
+import 'package:qlinica_mobile/main.dart';
 
 void main() {
   testWidgets('App loads smoke test', (WidgetTester tester) async {
