@@ -7,7 +7,7 @@ import 'notification_service.dart';
 /// Ganti dengan IP komputer Anda (yang menjalankan Laravel).
 /// Cara cek IP: jalankan `ipconfig` di CMD, cari IPv4 Address.
 /// Jangan pakai 'localhost' atau '127.0.0.1' dari HP fisik!
-const String kBaseUrl = 'http://192.168.1.9:8080/api/mobile';
+const String kBaseUrl = 'http://qlinica.ordin4ry.my.id:8000/api/mobile';
 
 /// ───────────────────────────────────────────c──────
 /// Model sederhana untuk User & PresensiRecord
@@ -513,10 +513,7 @@ class ApiService {
     try {
       final headers = await _authHeaders();
       final response = await http
-          .post(
-            Uri.parse('$kBaseUrl/presensi/alpa'),
-            headers: headers,
-          )
+          .post(Uri.parse('$kBaseUrl/presensi/alpa'), headers: headers)
           .timeout(const Duration(seconds: 7));
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -631,7 +628,8 @@ class ApiService {
     final response = await http.Response.fromStream(streamedResponse);
     final data = jsonDecode(response.body) as Map<String, dynamic>;
 
-    if ((response.statusCode == 200 || response.statusCode == 201) && data['success'] == true) {
+    if ((response.statusCode == 200 || response.statusCode == 201) &&
+        data['success'] == true) {
       return data;
     }
 
@@ -650,7 +648,9 @@ class ApiService {
     final data = jsonDecode(response.body) as Map<String, dynamic>;
 
     if (response.statusCode != 200 || data['success'] != true) {
-      throw Exception(data['message'] ?? 'Gagal memproses permintaan lupa password.');
+      throw Exception(
+        data['message'] ?? 'Gagal memproses permintaan lupa password.',
+      );
     }
   }
 
@@ -670,13 +670,19 @@ class ApiService {
     final data = jsonDecode(response.body) as Map<String, dynamic>;
 
     if (response.statusCode != 200 || data['success'] != true) {
-      throw Exception(data['message'] ?? 'Kode OTP tidak valid atau kadaluarsa.');
+      throw Exception(
+        data['message'] ?? 'Kode OTP tidak valid atau kadaluarsa.',
+      );
     }
   }
 
   /// ── Auth: Reset Password (Verifikasi OTP) ─────
 
-  Future<void> resetPassword(String email, String otp, String newPassword) async {
+  Future<void> resetPassword(
+    String email,
+    String otp,
+    String newPassword,
+  ) async {
     final response = await http.post(
       Uri.parse('$kBaseUrl/reset-password'),
       headers: _publicHeaders,
@@ -697,7 +703,7 @@ class ApiService {
   }
 
   /// ── Auth: Update FCM Token ────────────────────
-  
+
   Future<bool> updateFcmToken(String fcmToken) async {
     try {
       final headers = await _authHeaders();

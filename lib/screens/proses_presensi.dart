@@ -29,8 +29,8 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
   late Timer _timer;
   DateTime _currentTime = DateTime.now();
 
-  final double officeLat = -8.308916;
-  final double officeLng = 113.425736;
+  final double officeLat = -8.164423;
+  final double officeLng = 113.709018;
   final double radiusInMeters = 100;
 
   Position? _currentPosition;
