@@ -29,9 +29,11 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
   late Timer _timer;
   DateTime _currentTime = DateTime.now();
 
-  final double officeLat = -8.164423;
-  final double officeLng = 113.709018;
-  final double radiusInMeters = 100;
+  // Nilai default — akan di-overwrite dari API saat initState
+  double officeLat = -8.164423;
+  double officeLng = 113.709018;
+  double radiusInMeters = 100;
+  bool _isSettingsLoaded = false;
 
   Position? _currentPosition;
   double _distanceFromOffice = 0;
@@ -53,8 +55,29 @@ class _AttendanceProcessScreenState extends State<AttendanceProcessScreen> {
       });
     });
 
-    _getCurrentLocation();
+    _loadSettings();
     _retrieveLostData();
+  }
+
+  /// Fetch koordinat klinik & radius dari API agar tidak hardcode
+  Future<void> _loadSettings() async {
+    try {
+      final data = await ApiService.instance.getPresensiSettings();
+      final lokasi = data['lokasi'] as Map<String, dynamic>?;
+      if (lokasi != null && mounted) {
+        setState(() {
+          officeLat       = (lokasi['latitude']  as num).toDouble();
+          officeLng       = (lokasi['longitude'] as num).toDouble();
+          radiusInMeters  = (lokasi['radius']    as num).toDouble();
+          _isSettingsLoaded = true;
+        });
+      }
+    } catch (_) {
+      // Gagal fetch = pakai nilai default, tidak masalah
+      if (mounted) setState(() => _isSettingsLoaded = true);
+    }
+    // Mulai deteksi lokasi setelah settings siap
+    _getCurrentLocation();
   }
 
   Future<void> _retrieveLostData() async {

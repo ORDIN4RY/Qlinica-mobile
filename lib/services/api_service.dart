@@ -524,6 +524,42 @@ class ApiService {
     }
   }
 
+  /// ── Presensi: Ambil pengaturan lokasi & shift ─
+  /// Mengembalikan {latitude, longitude, radius} dan daftar shift dari server.
+  /// Digunakan agar mobile tidak hardcode nilai-nilai ini.
+  Future<Map<String, dynamic>> getPresensiSettings() async {
+    final headers = await _authHeaders();
+    final cacheKey = 'presensi_settings_cache';
+    final prefs = await SharedPreferences.getInstance();
+
+    try {
+      final response = await http
+          .get(Uri.parse('$kBaseUrl/presensi/settings'), headers: headers)
+          .timeout(const Duration(seconds: 7));
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        // Cache hasil agar tersedia saat offline
+        await prefs.setString(cacheKey, response.body);
+        return data;
+      }
+      throw Exception(data['message'] ?? 'Gagal mengambil pengaturan.');
+    } catch (_) {
+      // Fallback ke cache jika offline
+      final cachedStr = prefs.getString(cacheKey);
+      if (cachedStr != null) {
+        return jsonDecode(cachedStr) as Map<String, dynamic>;
+      }
+      // Fallback ke nilai default jika sama sekali belum pernah tersimpan
+      return {
+        'success': true,
+        'lokasi': {'latitude': -8.164423, 'longitude': 113.709018, 'radius': 100},
+        'shifts': [],
+      };
+    }
+  }
+
   /// ── Cuti: Daftar pengajuan ────────────────────
 
   Future<List<CutiRecord>> getCutiList({int? bulan, int? tahun}) async {
